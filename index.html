@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>זמינות כוח אדם</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#f4f6f9;--card:#fff;--text:#1e293b;--muted:#64748b;--line:#e2e8f0;--accent:#0f4c81;
+  --available:#16a34a;--vacation:#3b82f6;--sick:#f59e0b;--reserve:#8b5cf6;--danger:#dc2626;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--muted:#94a3b8;--line:#334155;--accent:#60a5fa}
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Heebo,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px}
+header{background:var(--accent);color:#fff;padding:14px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
+@media (prefers-color-scheme:dark){header{background:#0b2a4a}}
+header h1{margin:0;font-size:20px;font-weight:800}
+.weeknav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.weeknav button,.weeknav select{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 10px;font:inherit;cursor:pointer}
+.weeknav select option{color:#000}
+.weeknav button:disabled{opacity:.35;cursor:default}
+#weekLabel{font-weight:700;min-width:150px;text-align:center}
+nav.tabs{display:flex;gap:4px;padding:10px 16px 0;max-width:1300px;margin:auto;overflow-x:auto}
+nav.tabs button{border:0;background:transparent;padding:10px 16px;font:inherit;font-weight:500;color:var(--muted);border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button.on{color:var(--accent);border-color:var(--accent)}
+main{max-width:1300px;margin:auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+.card h3{margin:0 0 12px;font-size:16px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.row>.card{flex:1 1 340px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+select,input,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text)}
+button.btn{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+button.danger{color:var(--danger);border-color:var(--danger)}
+button.sm{padding:4px 10px;font-size:13px}
+.chips{display:grid;grid-template-columns:repeat(7,minmax(90px,1fr));gap:8px;overflow-x:auto;margin-bottom:16px}
+.chip{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 6px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font:inherit;cursor:pointer}
+.chip.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.chip.today b::after{content:" · היום";color:var(--accent);font-weight:500;font-size:12px}
+.chip .mini{font-size:12px;color:var(--muted)}
+.warn-dot{position:absolute;top:6px;left:6px;width:18px;height:18px;border-radius:50%;background:var(--danger);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--c,var(--accent));border-radius:12px;padding:12px 14px}
+.kpi span{color:var(--muted);font-size:13px}
+.kpi b{display:block;font-size:30px;font-weight:800;line-height:1.2}
+.kpi small{color:var(--c);font-weight:500}
+.alert{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-weight:500}
+@media (prefers-color-scheme:dark){.alert{background:#3b1010;color:#fecaca;border-color:#7f1d1d}}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.col{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.col h4{margin:0;padding:10px 12px;background:var(--c);color:#fff;display:flex;justify-content:space-between}
+.col ul{list-style:none;margin:0;padding:6px 0;max-height:280px;overflow:auto}
+.col li{padding:6px 12px;display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line)}
+.col li:last-child{border:0}
+.col li small{color:var(--muted);white-space:nowrap}
+.col li.none{color:var(--muted);justify-content:center}
+.stu{font-style:normal;font-size:11px;background:#e0e7ff;color:#3730a3;border-radius:6px;padding:1px 6px}
+.chartbox{position:relative;height:280px}
+.stuText{text-align:center;margin-top:8px;color:var(--muted)}
+.stuText b{color:var(--available);font-size:22px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font-size:13px;color:var(--muted);font-weight:500}
+table.grid td.cell,table.grid th.d{text-align:center;width:60px}
+table.grid th.today{color:var(--accent);font-weight:700}
+td.cell{cursor:pointer;font-weight:700;color:#fff;border:2px solid var(--card)}
+.s-available{background:var(--available)}.s-vacation{background:var(--vacation)}.s-sick{background:var(--sick)}.s-reserve{background:var(--reserve)}
+tr.role-head td{background:var(--bg);font-weight:700;color:var(--accent)}
+tfoot td{font-weight:700;text-align:center}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-left:4px;vertical-align:middle}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;color:#fff;font-size:12px;font-weight:500}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.form label.check{flex-direction:row;align-items:center;gap:8px;padding-bottom:10px}
+.empty{text-align:center;padding:50px 16px}
+.empty h2{margin-top:0}
+dialog{border:0;border-radius:14px;padding:20px;width:min(640px,94vw);background:var(--card);color:var(--text)}
+dialog textarea{width:100%;height:340px;direction:rtl}
+.muted{color:var(--muted)}
+[hidden]{display:none!important}
+@media (max-width:640px){header h1{font-size:17px}main{padding:10px}.chips{grid-template-columns:repeat(7,86px)}}
+.overlay{position:fixed;inset:0;background:var(--bg);z-index:50;display:grid;place-items:center;padding:16px}
+.loginbox{width:min(380px,100%);display:flex;flex-direction:column;gap:12px;margin:0}
+.loginbox h2{margin:0}
+.loginbox label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.err{color:var(--danger);min-height:1.2em;font-size:14px}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 16px;border-radius:10px;z-index:60;max-width:90vw;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#toast.bad{background:var(--danger)}
+.brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sync{font-size:13px;opacity:.9;background:rgba(255,255,255,.12);padding:3px 10px;border-radius:999px}
+@media print{header .weeknav,nav.tabs,.toolbar,.noprint{display:none!important}body{background:#fff}.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><h1>🛡️ זמינות כוח אדם</h1><span id="sync" class="sync"></span></div>
+  <div class="weeknav">
+    <button id="prevW" title="שבוע קודם">→</button>
+    <span id="weekLabel"></span>
+    <button id="nextW" title="שבוע הבא">←</button>
+    <select id="weekSel" aria-label="בחירת שבוע"></select>
+    <button id="thisW">השבוע</button>
+    <button id="logoutBtn" hidden>יציאה</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button data-tab="dash" class="on">📊 דשבורד</button>
+  <button data-tab="emps">👥 עובדים</button>
+  <button data-tab="abs">📅 היעדרויות</button>
+  <button data-tab="settings">⚙️ הגדרות</button>
+</nav>
+
+<main>
+<!-- ===== DASHBOARD ===== -->
+<section id="tab-dash">
+  <div id="empty" class="card empty" hidden>
+    <h2>אין עדיין עובדים במערכת</h2>
+    <p class="muted">הוסף עובדים בלשונית "עובדים", או טען נתוני דוגמה כדי לראות איך זה נראה.</p>
+    <button class="btn primary" id="demoBtn2">טען נתוני דוגמה</button>
+  </div>
+  <div id="dash">
+    <div class="toolbar">
+      <select id="roleFilter"></select>
+      <span style="flex:1"></span>
+      <button class="btn" id="summaryBtn">📋 סיכום לממונים</button>
+      <button class="btn" onclick="window.print()">🖨️ הדפסה</button>
+    </div>
+    <div class="chips" id="dayChips"></div>
+    <div id="alerts"></div>
+    <div class="kpis" id="kpis"></div>
+
+    <div class="card">
+      <h3 id="colsTitle">מצב העובדים ביום הנבחר</h3>
+      <div class="cols" id="cols"></div>
+    </div>
+
+    <div class="row">
+      <div class="card"><h3>זמינות יומית לאורך השבוע</h3><div class="chartbox"><canvas id="weekChart"></canvas></div></div>
+      <div class="card"><h3>זמינות לפי תפקיד מול תקן</h3><div class="chartbox"><canvas id="roleChart"></canvas></div></div>
+    </div>
+
+    <div class="row">
+      <div class="card"><h3>סטודנטים</h3><div class="chartbox"><canvas id="stuChart"></canvas></div><div class="stuText" id="stuText"></div></div>
+      <div class="card" style="flex:2 1 560px">
+        <h3>לוח שבועי <span class="muted" style="font-weight:400;font-size:13px">· לחיצה על משבצת = הזנת/עריכת היעדרות</span></h3>
+        <div class="tablewrap" id="grid"></div>
+        <div class="legend">
+          <span><i style="background:var(--available)"></i>✓ זמין</span>
+          <span><i style="background:var(--vacation)"></i>ח חופשה</span>
+          <span><i style="background:var(--sick)"></i>מ מחלה</span>
+          <span><i style="background:var(--reserve)"></i>מל מילואים</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== EMPLOYEES ===== -->
+<section id="tab-emps" hidden>
+  <div class="card">
+    <h3 id="empFormTitle">הוספת עובד</h3>
+    <form id="empForm" class="form">
+      <label>שם מלא<input id="eName" required></label>
+      <label>תפקיד<select id="eRole"></select></label>
+      <label>טלפון (לא חובה)<input id="ePhone" inputmode="tel"></label>
+      <label class="check"><input type="checkbox" id="eStudent"> סטודנט</label>
+      <div style="display:flex;gap:8px">
+        <button class="btn primary" type="submit" id="empSubmit">הוסף</button>
+        <button class="btn" type="button" id="empCancel" hidden>ביטול</button>
+      </div>
+    </form>
+  </div>
+  <div class="card">
+    <div class="toolbar"><h3 style="margin:0;flex:1">רשימת עובדים (<span id="empCount">0</span>)</h3><input id="empSearch" placeholder="חיפוש…"></div>
+    <div class="tablewrap" id="empTable"></div>
+  </div>
+</section>
+
+<!-- ===== ABSENCES ===== -->
+<section id="tab-abs" hidden>
+  <div class="card">
+    <h3 id="absFormTitle">הזנת תקופת היעדרות</h3>
+    <form id="absForm" class="form">
+      <label>עובד<select id="aEmp" required></select></label>
+      <label>סוג<select id="aType">
+        <option value="vacation">חופשה</option>
+        <option value="sick">מחלה</option>
+        <option value="reserve">מילואים</option>
+      </select></label>
+      <label>מתאריך<input type="date" id="aFrom" required></label>
+      <label>עד תאריך (כולל)<input type="date" id="aTo" required></label>
+      <label>הערה<input id="aNote"></label>
+      <div style="display:flex;gap:8px">
+        <button class="btn primary" type="submit" id="absSubmit">שמור</button>
+        <button class="btn" type="button" id="absCancel" hidden>ביטול</button>
+      </div>
+    </form>
+  </div>
+  <div class="card">
+    <div class="toolbar">
+      <h3 style="margin:0;flex:1">היעדרויות</h3>
+      <select id="absFilter"><option value="current">פעילות ועתידיות</option><option value="all">הכל כולל עבר</option></select>
+      <input id="absSearch" placeholder="חיפוש עובד…">
+    </div>
+    <div class="tablewrap" id="absTable"></div>
+  </div>
+</section>
+
+<!-- ===== SETTINGS ===== -->
+<section id="tab-settings" hidden>
+  <div class="card">
+    <h3>תקן מינימלי יומי לפי תפקיד</h3>
+    <p class="muted" style="margin-top:0">כשמספר הזמינים בתפקיד יורד מתחת לתקן — יום יסומן באדום ותופיע התראת חוסר.</p>
+    <div class="form" id="minForm"></div>
+  </div>
+  <div class="card">
+    <h3>גיבוי ושחזור</h3>
+    <p class="muted" style="margin-top:0" id="storageNote">הנתונים נשמרים בדפדפן הזה בלבד. מומלץ לייצא גיבוי מדי פעם, ולייבא אותו כדי לעבור למחשב אחר.</p>
+    <div class="toolbar">
+      <button class="btn primary" id="exportBtn">⬇️ ייצוא גיבוי (JSON)</button>
+      <button class="btn" id="csvBtn">⬇️ ייצוא השבוע לאקסל (CSV)</button>
+      <label class="btn" style="cursor:pointer">⬆️ ייבוא גיבוי<input type="file" id="importFile" accept=".json,application/json" hidden></label>
+    </div>
+  </div>
+  <div class="card">
+    <h3>נתונים</h3>
+    <div class="toolbar">
+      <button class="btn" id="demoBtn">טען נתוני דוגמה</button>
+      <button class="btn danger" id="clearBtn">מחק את כל הנתונים</button>
+    </div>
+  </div>
+</section>
+</main>
+
+<div id="login" class="overlay" hidden>
+  <form id="loginForm" class="card loginbox">
+    <h2>🛡️ זמינות כוח אדם</h2>
+    <p class="muted" style="margin:0">כניסת מנהל</p>
+    <label>אימייל<input type="email" id="lEmail" required autocomplete="username" dir="ltr"></label>
+    <label>סיסמה<input type="password" id="lPass" required autocomplete="current-password" dir="ltr"></label>
+    <button class="btn primary" id="lBtn" type="submit">כניסה</button>
+    <div id="loginErr" class="err"></div>
+  </form>
+</div>
+<div id="toast" hidden></div>
+
+<dialog id="sumDlg">
+  <h3 style="margin-top:0">סיכום לממונים</h3>
+  <textarea id="sumText" readonly></textarea>
+  <div class="toolbar" style="margin-top:10px">
+    <button class="btn primary" id="copyBtn">העתק</button>
+    <button class="btn" onclick="document.getElementById('sumDlg').close()">סגור</button>
+    <span id="copyMsg" class="muted"></span>
+  </div>
+</dialog>
+
+<script>
+/* ================= CONFIG ================= */
+const ROLES = ['אחמ"ש','מאבטח','שומר'];
+const TYPES = {
+  available:{label:'זמינים', single:'זמין',  color:'#16a34a', cell:'✓'},
+  vacation: {label:'חופשה',  single:'חופשה', color:'#3b82f6', cell:'ח'},
+  sick:     {label:'מחלה',   single:'מחלה',  color:'#f59e0b', cell:'מ'},
+  reserve:  {label:'מילואים',single:'מילואים',color:'#8b5cf6', cell:'מל'}
+};
+const ABS_TYPES = ['vacation','sick','reserve'];
+const DAY_NAMES = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+const DAY_SHORT = ['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+const KEY = 'staff-availability-v1';
+const MAX_WEEKS = 52;
+
+/* ================= חיבור למסד הנתונים (Supabase) =================
+   הדבק כאן את שני הערכים מ-Supabase → Project Settings → API.
+   אם משאירים ריק – המערכת עובדת במצב מקומי (שמירה בדפדפן בלבד). */
+const SUPABASE_URL      = 'https://brtpklgruzbkgtteazli.supabase.co';   // לדוגמה: 'https://abcdefgh.supabase.co'
+const SUPABASE_ANON_KEY = 'sb_publishable_Z8NtfZYAVeO-VVPyt_BrwA_RCvq_TrD';   // ה-anon / publishable key (מותר שיהיה גלוי – ההגנה היא דרך ההתחברות וה-RLS)
+const CLOUD = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+let sb = null;
+
+/* ================= STATE ================= */
+let state = blank();
+function blank(){ return {employees:[],absences:[],minimums:{'אחמ"ש':1,'מאבטח':3,'שומר':2}}; }
+function loadLocal(){
+  try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && Array.isArray(s.employees)) return Object.assign(blank(), s); }catch(e){}
+  return blank();
+}
+const uid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2,10);
+const $ = s => document.querySelector(s);
+
+/* ================= DATA LAYER ================= */
+const q = async p => { const {data, error} = await p; if(error) throw error; return data; };
+const E2R = e => ({id:e.id, name:e.name, role:e.role, phone:e.phone||'', student:!!e.student});
+const R2E = r => ({id:r.id, name:r.name, role:r.role, phone:r.phone||'', student:!!r.student});
+const A2R = a => ({id:a.id, emp_id:a.empId, type:a.type, date_from:a.from, date_to:a.to, note:a.note||''});
+const R2A = r => ({id:r.id, empId:r.emp_id, type:r.type, from:r.date_from, to:r.date_to, note:r.note||''});
+const cloud = {
+  async loadAll(){
+    const [e, a, s] = await Promise.all([
+      q(sb.from('employees').select('id,name,role,phone,student')),
+      q(sb.from('absences').select('id,emp_id,type,date_from,date_to,note')),
+      q(sb.from('settings').select('value').eq('key','minimums').maybeSingle())
+    ]);
+    return {employees:e.map(R2E), absences:a.map(R2A), minimums:(s && s.value) || blank().minimums};
+  },
+  saveEmp: e  => q(sb.from('employees').upsert(E2R(e))),
+  delEmp:  id => q(sb.from('employees').delete().eq('id', id)),        // ההיעדרויות נמחקות אוטומטית (cascade)
+  saveAbs: a  => q(sb.from('absences').upsert(A2R(a))),
+  delAbs:  id => q(sb.from('absences').delete().eq('id', id)),
+  saveMin: m  => q(sb.from('settings').upsert({key:'minimums', value:m})),
+  async clearAll(){
+    await q(sb.from('absences').delete().neq('id', ''));
+    await q(sb.from('employees').delete().neq('id', ''));
+  },
+  async replaceAll(s){
+    await cloud.clearAll();
+    const ids = new Set(s.employees.map(e => e.id));
+    const abs = s.absences.filter(a => ids.has(a.empId));
+    if(s.employees.length) await q(sb.from('employees').insert(s.employees.map(E2R)));
+    if(abs.length)         await q(sb.from('absences').insert(abs.map(A2R)));
+    await cloud.saveMin(s.minimums);
+  }
+};
+
+let pending = 0;
+const errMsg = err => /fetch|network/i.test(err && err.message || '') ? 'אין חיבור לשרת' : (err && err.message) || String(err);
+function setSync(kind){
+  $('#sync').textContent = {local:'💾 שמירה בדפדפן בלבד', ok:'☁️ שמור בענן', saving:'⏳ שומר…', error:'⚠️ שגיאת סנכרון', off:''}[kind];
+}
+let toastT;
+function toast(msg, bad){
+  const t = $('#toast'); t.textContent = msg; t.className = bad ? 'bad' : ''; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, bad ? 6000 : 2500);
+}
+// עדכון מיידי של המסך, ואז שמירה (ענן או דפדפן). אם השמירה בענן נכשלת – טוענים מחדש את המצב האמיתי מהשרת.
+async function persist(cloudOp){
+  renderAll();
+  if(!CLOUD){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ toast('שמירה נכשלה: '+e.message, true); }
+    return true;
+  }
+  pending++; setSync('saving');
+  try{ await cloudOp(); pending--; if(!pending) setSync('ok'); return true; }
+  catch(err){ pending--; setSync('error'); toast('השמירה נכשלה: '+errMsg(err)+' · טוען מחדש מהשרת', true); await reload(); return false; }
+}
+async function reload(){
+  if(!CLOUD){ state = loadLocal(); renderAll(); return; }
+  try{ state = await cloud.loadAll(); if(!pending) setSync('ok'); }
+  catch(err){ setSync('error'); toast('טעינת הנתונים נכשלה: '+errMsg(err), true); }
+  renderAll();
+}
+
+/* ---------- סנכרון חי: שינוי ממכשיר אחר מתעדכן כאן אוטומטית ---------- */
+let rt = null, rtTimer = null;
+function onRemote(){ clearTimeout(rtTimer); rtTimer = setTimeout(() => pending ? onRemote() : reload(), 700); }
+function subscribe(){
+  if(rt) return;
+  rt = sb.channel('staff-db');
+  ['employees','absences','settings'].forEach(t => rt.on('postgres_changes', {event:'*', schema:'public', table:t}, onRemote));
+  rt.subscribe();
+}
+
+/* ---------- התחברות ---------- */
+async function boot(){
+  if(!CLOUD){
+    setSync('local'); state = loadLocal(); renderAll(); return;
+  }
+  $('#storageNote').textContent = 'הנתונים נשמרים במסד הנתונים בענן (Supabase) ומסונכרנים בין כל המכשירים. גיבוי JSON מדי פעם הוא שכבת הגנה נוספת.';
+  setSync('off');
+  if(!window.supabase){ showLogin('לא ניתן לטעון את רכיב החיבור למסד הנתונים – בדוק חיבור לאינטרנט ורענן.'); return; }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  sb.auth.onAuthStateChange(ev => { if(ev === 'SIGNED_OUT') showLogin(); });
+  const {data} = await sb.auth.getSession();
+  if(data && data.session) await afterLogin(data.session); else showLogin();
+}
+function showLogin(msg){
+  $('#login').hidden = false; $('#logoutBtn').hidden = true; $('#loginErr').textContent = msg || '';
+  setSync('off'); state = blank(); renderAll();
+}
+async function afterLogin(session){
+  $('#login').hidden = true; $('#logoutBtn').hidden = false;
+  $('#logoutBtn').title = session.user.email || '';
+  await reload(); subscribe(); offerMigration();
+}
+$('#loginForm').onsubmit = async e => {
+  e.preventDefault();
+  if(!sb) return;
+  $('#lBtn').disabled = true; $('#loginErr').textContent = '';
+  const {data, error} = await sb.auth.signInWithPassword({email:$('#lEmail').value.trim(), password:$('#lPass').value});
+  $('#lBtn').disabled = false;
+  if(error) $('#loginErr').textContent = /invalid/i.test(error.message) ? 'אימייל או סיסמה שגויים' : errMsg(error);
+  else { $('#lPass').value = ''; await afterLogin(data.session); }
+};
+$('#logoutBtn').onclick = async () => {
+  if(rt){ sb.removeChannel(rt); rt = null; }
+  await sb.auth.signOut();
+};
+// אם יש נתונים ישנים ששמורים בדפדפן ומסד הנתונים ריק – מציעים להעלות אותם
+function offerMigration(){
+  const local = loadLocal();
+  if(state.employees.length || !local.employees.length) return;
+  if(!confirm(`נמצאו בדפדפן הזה ${local.employees.length} עובדים ו-${local.absences.length} היעדרויות מלפני החיבור לענן. להעלות אותם למסד הנתונים?`)) return;
+  state = local;
+  persist(() => cloud.replaceAll(local)).then(ok => { if(ok) toast('הנתונים הועלו למסד הנתונים ✓'); });
+}
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ================= DATES ================= */
+const pad = n => String(n).padStart(2,'0');
+const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const addDays = (d,n) => new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
+const weekStart = d => addDays(d, -d.getDay());           // ישראל: השבוע מתחיל ביום ראשון
+const short = s => { const d = parse(s); return `${d.getDate()}/${d.getMonth()+1}`; };
+const full = s => { const d = parse(s); return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; };
+const dayName = s => DAY_NAMES[parse(s).getDay()];
+const daysBetween = (a,b) => Math.round((parse(b)-parse(a))/86400000)+1;
+
+const TODAY = fmt(new Date());
+const BASE_WEEK = weekStart(new Date());
+let weekOffset = 0;
+let selDay = TODAY;
+const weekDays = () => { const s = addDays(BASE_WEEK, weekOffset*7); return [...Array(7)].map((_,i)=>fmt(addDays(s,i))); };
+
+/* ================= LOGIC ================= */
+const absenceOn = (empId, ds) => state.absences.find(a => a.empId===empId && a.from<=ds && ds<=a.to);
+const statusOn  = (empId, ds) => { const a = absenceOn(empId, ds); return a ? a.type : 'available'; };
+function countsOn(ds, flt){
+  const c = {available:0,vacation:0,sick:0,reserve:0};
+  state.employees.filter(flt || (()=>true)).forEach(e => c[statusOn(e.id, ds)]++);
+  return c;
+}
+function shortages(ds){
+  return ROLES.map(r => {
+    const avail = state.employees.filter(e => e.role===r && statusOn(e.id,ds)==='available').length;
+    return {role:r, avail, min:+state.minimums[r]||0};
+  }).filter(s => s.min>0 && s.avail<s.min);
+}
+const byRole = (a,b) => ROLES.indexOf(a.role)-ROLES.indexOf(b.role) || a.name.localeCompare(b.name,'he');
+const empById = id => state.employees.find(e => e.id===id);
+
+/* ================= WEEK NAV ================= */
+function setWeek(n){
+  weekOffset = Math.max(0, Math.min(MAX_WEEKS, n));
+  const days = weekDays();
+  selDay = days.includes(TODAY) ? TODAY : days[0];
+  renderAll();
+}
+$('#prevW').onclick = () => setWeek(weekOffset-1);
+$('#nextW').onclick = () => setWeek(weekOffset+1);
+$('#thisW').onclick = () => setWeek(0);
+$('#weekSel').onchange = e => setWeek(+e.target.value);
+(function buildWeekSelect(){
+  const sel = $('#weekSel');
+  for(let i=0;i<=MAX_WEEKS;i++){
+    const s = addDays(BASE_WEEK,i*7), e = addDays(s,6);
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = (i===0?'השבוע: ':i===1?'שבוע הבא: ':'') + `${s.getDate()}/${s.getMonth()+1} – ${e.getDate()}/${e.getMonth()+1}/${e.getFullYear()}`;
+    sel.appendChild(o);
+  }
+})();
+function renderHeader(){
+  const d = weekDays();
+  $('#weekLabel').textContent = `${short(d[0])} – ${full(d[6])}`;
+  $('#prevW').disabled = weekOffset<=0;
+  $('#nextW').disabled = weekOffset>=MAX_WEEKS;
+  $('#weekSel').value = weekOffset;
+}
+
+/* ================= TABS ================= */
+function showTab(t){
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab===t));
+  ['dash','emps','abs','settings'].forEach(x => $('#tab-'+x).hidden = x!==t);
+  if(t==='dash') renderDashboard();
+  window.scrollTo({top:0});
+}
+document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+/* ================= DASHBOARD ================= */
+$('#roleFilter').innerHTML = '<option value="">כל התפקידים</option>' + ROLES.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('');
+$('#roleFilter').onchange = () => renderDashboard();
+
+function renderDashboard(){
+  const has = state.employees.length>0;
+  $('#empty').hidden = has; $('#dash').hidden = !has;
+  if(!has) return;
+  const days = weekDays();
+  const rf = $('#roleFilter').value;
+  const flt = e => !rf || e.role===rf;
+  const emps = state.employees.filter(flt);
+
+  // ימים
+  $('#dayChips').innerHTML = days.map((ds,i) => {
+    const c = countsOn(ds, flt), sh = shortages(ds).length;
+    return `<button class="chip ${ds===selDay?'on':''} ${ds===TODAY?'today':''}" data-day="${ds}">
+      <b>${DAY_NAMES[i]}</b><span>${short(ds)}</span>
+      <span class="mini">${c.available}/${emps.length} זמינים</span>
+      ${sh?'<span class="warn-dot" title="חוסר בתקן">!</span>':''}</button>`;
+  }).join('');
+  document.querySelectorAll('.chip').forEach(b => b.onclick = () => { selDay = b.dataset.day; renderDashboard(); });
+
+  // התראות חוסר
+  const sh = shortages(selDay);
+  $('#alerts').innerHTML = sh.length ? `<div class="alert">⚠️ חוסר בתקן ביום ${dayName(selDay)} ${short(selDay)}: ` +
+    sh.map(s => `${esc(s.role)} – ${s.avail} זמינים מתוך תקן ${s.min} (חסרים ${s.min-s.avail})`).join(' · ') + '</div>' : '';
+
+  // KPI
+  const c = countsOn(selDay, flt);
+  const pct = emps.length ? Math.round(c.available/emps.length*100) : 0;
+  $('#kpis').innerHTML = `<div class="kpi"><span>סה"כ עובדים${rf?' · '+esc(rf):''}</span><b>${emps.length}</b></div>` +
+    Object.keys(TYPES).map(k => `<div class="kpi" style="--c:${TYPES[k].color}"><span>${TYPES[k].label}</span><b>${c[k]}</b>${k==='available'?`<small>${pct}% זמינות</small>`:''}</div>`).join('');
+
+  // עמודות לפי סטטוס
+  $('#colsTitle').textContent = `מצב העובדים – יום ${dayName(selDay)} ${full(selDay)}`;
+  $('#cols').innerHTML = Object.keys(TYPES).map(k => {
+    const list = emps.filter(e => statusOn(e.id, selDay)===k).sort(byRole);
+    return `<div class="col" style="--c:${TYPES[k].color}"><h4>${TYPES[k].label}<span>${list.length}</span></h4><ul>` +
+      (list.map(e => { const a = absenceOn(e.id, selDay);
+        return `<li><span>${esc(e.name)}${e.student?' <i class="stu">סטודנט</i>':''}</span><small>${esc(e.role)}${a?` · עד ${short(a.to)}`:''}</small></li>`;
+      }).join('') || '<li class="none">—</li>') + '</ul></div>';
+  }).join('');
+
+  renderCharts(days, flt, emps);
+  renderGrid(days, emps);
+}
+
+/* ---------- charts ---------- */
+const charts = {};
+function chart(id, cfg){
+  if(!window.Chart) return;
+  if(charts[id]){ charts[id].data = cfg.data; charts[id].options = cfg.options; charts[id].update(); return; }
+  charts[id] = new Chart(document.getElementById(id), cfg);
+}
+if(window.Chart){
+  Chart.defaults.font.family = 'Heebo, system-ui, sans-serif';
+  Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#64748b';
+}
+const legendOpts = {position:'bottom', rtl:true, labels:{boxWidth:12, usePointStyle:true}};
+
+function renderCharts(days, flt, emps){
+  {
+    const st = emps.filter(e => e.student), act = st.filter(e => statusOn(e.id, selDay)==='available').length;
+    const p = emps.length ? Math.round(act/emps.length*100) : 0;
+    $('#stuText').innerHTML = `<b>${act}</b> סטודנטים פעילים מתוך ${st.length} סטודנטים · ${emps.length} עובדים סה"כ<br>(${p}% מכוח האדם ביום ${dayName(selDay)})`;
+  }
+  if(!window.Chart){ document.querySelectorAll('.chartbox').forEach(b=>b.innerHTML='<p class="muted">הגרפים לא נטענו (אין חיבור לאינטרנט)</p>'); return; }
+
+  // 1. זמינות יומית בשבוע – עמודות מוערמות
+  chart('weekChart', {type:'bar',
+    data:{labels: days.map((ds,i)=>`${DAY_SHORT[i]} ${short(ds)}`),
+      datasets: Object.keys(TYPES).map(k => ({label:TYPES[k].label, data:days.map(ds=>countsOn(ds,flt)[k]), backgroundColor:TYPES[k].color, borderRadius:4, stack:'s'}))},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:legendOpts, tooltip:{rtl:true}},
+      scales:{x:{stacked:true}, y:{stacked:true, beginAtZero:true, ticks:{precision:0}}}}
+  });
+
+  // 2. לפי תפקיד מול תקן (יום נבחר)
+  const avail = ROLES.map(r => state.employees.filter(e=>e.role===r && statusOn(e.id,selDay)==='available').length);
+  const absent = ROLES.map((r,i) => state.employees.filter(e=>e.role===r).length - avail[i]);
+  chart('roleChart', {type:'bar',
+    data:{labels: ROLES, datasets:[
+      {label:'זמינים', data:avail, backgroundColor:TYPES.available.color, borderRadius:4, stack:'r', order:2},
+      {label:'נעדרים', data:absent, backgroundColor:'#94a3b8', borderRadius:4, stack:'r', order:2},
+      {label:'תקן מינימלי', type:'line', data:ROLES.map(r=>+state.minimums[r]||0), borderColor:'#dc2626', backgroundColor:'#dc2626', borderDash:[6,4], pointRadius:6, pointStyle:'rectRot', showLine:false, order:1}
+    ]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:legendOpts, tooltip:{rtl:true}},
+      scales:{x:{stacked:true}, y:{stacked:true, beginAtZero:true, ticks:{precision:0}}}}
+  });
+
+  // 3. סטודנטים – סטודנט בהיעדרות יוצא מ"פעילים" ועובר לקטגוריית ההיעדרות עד סיומה
+  const students = emps.filter(e => e.student);
+  const sc = {available:0,vacation:0,sick:0,reserve:0};
+  students.forEach(e => sc[statusOn(e.id, selDay)]++);
+  const non = emps.length - students.length;
+  chart('stuChart', {type:'doughnut',
+    data:{labels:['סטודנטים פעילים','סטודנטים בחופשה','סטודנטים במחלה','סטודנטים במילואים','שאר העובדים'],
+      datasets:[{data:[sc.available, sc.vacation, sc.sick, sc.reserve, non],
+        backgroundColor:[TYPES.available.color, TYPES.vacation.color, TYPES.sick.color, TYPES.reserve.color, '#cbd5e1'], borderWidth:2}]},
+    options:{responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{legend:legendOpts, tooltip:{rtl:true}}}
+  });
+}
+
+/* ---------- weekly grid ---------- */
+function renderGrid(days, emps){
+  const sorted = [...emps].sort(byRole);
+  let h = `<table class="grid"><thead><tr><th>עובד</th>${days.map((ds,i)=>`<th class="d ${ds===TODAY?'today':''}">${DAY_SHORT[i]}<br><small>${short(ds)}</small></th>`).join('')}</tr></thead><tbody>`;
+  let lastRole = null;
+  sorted.forEach(e => {
+    if(e.role!==lastRole){ lastRole = e.role; h += `<tr class="role-head"><td colspan="8">${esc(e.role)}</td></tr>`; }
+    h += `<tr><td>${esc(e.name)}${e.student?' <i class="stu">ס</i>':''}</td>` +
+      days.map(ds => { const s = statusOn(e.id, ds); return `<td class="cell s-${s}" data-emp="${e.id}" data-day="${ds}" title="${esc(e.name)} · ${TYPES[s].single}">${TYPES[s].cell}</td>`; }).join('') + '</tr>';
+  });
+  h += `</tbody><tfoot><tr><td>זמינים</td>${days.map(ds => {
+      const n = sorted.filter(e=>statusOn(e.id,ds)==='available').length; const bad = shortages(ds).length;
+      return `<td style="color:${bad?'var(--danger)':'inherit'}">${n}</td>`; }).join('')}</tr></tfoot></table>`;
+  $('#grid').innerHTML = h;
+  document.querySelectorAll('td.cell').forEach(td => td.onclick = () => {
+    const a = absenceOn(td.dataset.emp, td.dataset.day);
+    showTab('abs');
+    if(a) editAbsence(a.id); else { resetAbsForm(); $('#aEmp').value = td.dataset.emp; $('#aFrom').value = $('#aTo').value = td.dataset.day; }
+  });
+}
+
+/* ---------- summary for managers ---------- */
+function summaryText(){
+  const ds = selDay, emps = state.employees, days = weekDays();
+  const c = countsOn(ds);
+  const pct = emps.length ? Math.round(c.available/emps.length*100) : 0;
+  const L = [`סיכום זמינות כוח אדם – יום ${dayName(ds)} ${full(ds)}`, '',
+             `סה"כ עובדים: ${emps.length} | זמינים: ${c.available} (${pct}%)`];
+  ABS_TYPES.forEach(k => {
+    const names = emps.filter(e=>statusOn(e.id,ds)===k).sort(byRole).map(e=>`${e.name} (${e.role}, עד ${short(absenceOn(e.id,ds).to)})`);
+    L.push(`${TYPES[k].label}: ${c[k]}${names.length?' – '+names.join(', '):''}`);
+  });
+  L.push('', 'לפי תפקיד:');
+  ROLES.forEach(r => {
+    const re = emps.filter(e=>e.role===r); const av = re.filter(e=>statusOn(e.id,ds)==='available').length; const m = +state.minimums[r]||0;
+    L.push(`• ${r}: ${av} זמינים מתוך ${re.length}${m?` (תקן ${m}${av<m?` – חסרים ${m-av} ⚠️`:''})`:''}`);
+  });
+  const st = emps.filter(e=>e.student), sa = st.filter(e=>statusOn(e.id,ds)==='available').length;
+  L.push('', `סטודנטים פעילים: ${sa} מתוך ${st.length} סטודנטים (${emps.length} עובדים סה"כ)`);
+  L.push('', `זמינות לאורך השבוע ${short(days[0])}–${short(days[6])}:`);
+  days.forEach(d => {
+    const n = countsOn(d).available, sh = shortages(d);
+    L.push(`• ${dayName(d)} ${short(d)}: ${n}/${emps.length} זמינים${sh.length?' ⚠️ חוסר: '+sh.map(s=>`${s.role} (${s.avail}/${s.min})`).join(', '):''}`);
+  });
+  return L.join('\n');
+}
+$('#summaryBtn').onclick = () => { $('#sumText').value = summaryText(); $('#copyMsg').textContent=''; $('#sumDlg').showModal(); };
+$('#copyBtn').onclick = async () => {
+  try{ await navigator.clipboard.writeText($('#sumText').value); $('#copyMsg').textContent = '✓ הועתק'; }
+  catch(e){ $('#sumText').select(); document.execCommand('copy'); $('#copyMsg').textContent = '✓ הועתק'; }
+};
+
+/* ================= EMPLOYEES ================= */
+$('#eRole').innerHTML = ROLES.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('');
+let editingEmp = null;
+function resetEmpForm(){
+  editingEmp = null; $('#empForm').reset();
+  $('#empFormTitle').textContent = 'הוספת עובד'; $('#empSubmit').textContent = 'הוסף'; $('#empCancel').hidden = true;
+}
+$('#empCancel').onclick = resetEmpForm;
+$('#empForm').onsubmit = e => {
+  e.preventDefault();
+  const data = {name:$('#eName').value.trim(), role:$('#eRole').value, phone:$('#ePhone').value.trim(), student:$('#eStudent').checked};
+  if(!data.name) return;
+  let emp;
+  if(editingEmp){ emp = empById(editingEmp); Object.assign(emp, data); }
+  else { emp = {id:uid(), ...data}; state.employees.push(emp); }
+  resetEmpForm(); persist(() => cloud.saveEmp(emp));
+};
+function editEmp(id){
+  const e = empById(id); editingEmp = id;
+  $('#eName').value = e.name; $('#eRole').value = e.role; $('#ePhone').value = e.phone||''; $('#eStudent').checked = !!e.student;
+  $('#empFormTitle').textContent = 'עריכת עובד'; $('#empSubmit').textContent = 'שמור'; $('#empCancel').hidden = false;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function delEmp(id){
+  const e = empById(id);
+  if(!confirm(`למחוק את ${e.name}? כל ההיעדרויות שלו יימחקו גם.`)) return;
+  state.employees = state.employees.filter(x=>x.id!==id);
+  state.absences = state.absences.filter(a=>a.empId!==id);
+  persist(() => cloud.delEmp(id));
+}
+function renderEmps(){
+  const q = $('#empSearch').value.trim();
+  const list = state.employees.filter(e => !q || e.name.includes(q) || e.role.includes(q)).sort(byRole);
+  $('#empCount').textContent = state.employees.length;
+  $('#empTable').innerHTML = list.length ? `<table><thead><tr><th>שם</th><th>תפקיד</th><th>סטודנט</th><th>טלפון</th><th>מצב היום</th><th></th></tr></thead><tbody>` +
+    list.map(e => { const s = statusOn(e.id, TODAY), a = absenceOn(e.id, TODAY);
+      return `<tr><td>${esc(e.name)}</td><td>${esc(e.role)}</td><td>${e.student?'✓':''}</td><td dir="ltr" style="text-align:right">${esc(e.phone||'')}</td>
+      <td><span class="badge" style="background:${TYPES[s].color}">${TYPES[s].single}${a?' עד '+short(a.to):''}</span></td>
+      <td><button class="btn sm" onclick="addAbsFor('${e.id}')">+ היעדרות</button> <button class="btn sm" onclick="editEmp('${e.id}')">עריכה</button> <button class="btn sm danger" onclick="delEmp('${e.id}')">מחיקה</button></td></tr>`;
+    }).join('') + '</tbody></table>' : '<p class="muted">אין עובדים.</p>';
+}
+$('#empSearch').oninput = renderEmps;
+function addAbsFor(id){ showTab('abs'); resetAbsForm(); $('#aEmp').value = id; $('#aFrom').focus(); }
+
+/* ================= ABSENCES ================= */
+let editingAbs = null;
+function fillEmpSelect(){
+  const cur = $('#aEmp').value;
+  $('#aEmp').innerHTML = '<option value="">בחר עובד…</option>' + [...state.employees].sort(byRole).map(e=>`<option value="${e.id}">${esc(e.name)} · ${esc(e.role)}</option>`).join('');
+  $('#aEmp').value = cur;
+}
+function resetAbsForm(){
+  editingAbs = null; $('#absForm').reset(); $('#aFrom').value = TODAY;
+  $('#absFormTitle').textContent = 'הזנת תקופת היעדרות'; $('#absCancel').hidden = true;
+}
+$('#absCancel').onclick = resetAbsForm;
+$('#aFrom').onchange = () => { if(!$('#aTo').value || $('#aTo').value < $('#aFrom').value) $('#aTo').value = $('#aFrom').value; };
+$('#absForm').onsubmit = e => {
+  e.preventDefault();
+  const d = {empId:$('#aEmp').value, type:$('#aType').value, from:$('#aFrom').value, to:$('#aTo').value, note:$('#aNote').value.trim()};
+  if(!d.empId) return alert('בחר עובד');
+  if(d.to < d.from) return alert('תאריך הסיום לפני תאריך ההתחלה');
+  const overlap = state.absences.find(a => a.id!==editingAbs && a.empId===d.empId && a.from<=d.to && d.from<=a.to);
+  if(overlap && !confirm(`לעובד כבר יש ${TYPES[overlap.type].single} בין ${full(overlap.from)} ל-${full(overlap.to)}. לשמור בכל זאת?`)) return;
+  let abs;
+  if(editingAbs){ abs = state.absences.find(a=>a.id===editingAbs); Object.assign(abs, d); }
+  else { abs = {id:uid(), ...d}; state.absences.push(abs); }
+  resetAbsForm(); persist(() => cloud.saveAbs(abs));
+};
+function editAbsence(id){
+  const a = state.absences.find(x=>x.id===id); editingAbs = id;
+  $('#aEmp').value = a.empId; $('#aType').value = a.type; $('#aFrom').value = a.from; $('#aTo').value = a.to; $('#aNote').value = a.note||'';
+  $('#absFormTitle').textContent = 'עריכת היעדרות'; $('#absCancel').hidden = false;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function delAbsence(id){ if(confirm('למחוק את ההיעדרות?')){ state.absences = state.absences.filter(a=>a.id!==id); persist(() => cloud.delAbs(id)); } }
+function renderAbs(){
+  const f = $('#absFilter').value, q = $('#absSearch').value.trim();
+  const list = state.absences
+    .filter(a => f==='all' || a.to>=TODAY)
+    .filter(a => { const e = empById(a.empId); return e && (!q || e.name.includes(q)); })
+    .sort((a,b) => a.from.localeCompare(b.from));
+  $('#absTable').innerHTML = list.length ? `<table><thead><tr><th>עובד</th><th>תפקיד</th><th>סוג</th><th>מתאריך</th><th>עד</th><th>ימים</th><th>הערה</th><th></th></tr></thead><tbody>` +
+    list.map(a => { const e = empById(a.empId); const active = a.from<=TODAY && TODAY<=a.to;
+      return `<tr><td>${esc(e.name)}${e.student?' <i class="stu">סטודנט</i>':''}</td><td>${esc(e.role)}</td>
+        <td><span class="badge" style="background:${TYPES[a.type].color}">${TYPES[a.type].single}</span>${active?' <small class="muted">· פעיל</small>':''}</td>
+        <td>${full(a.from)}</td><td>${full(a.to)}</td><td>${daysBetween(a.from,a.to)}</td><td>${esc(a.note||'')}</td>
+        <td><button class="btn sm" onclick="editAbsence('${a.id}')">עריכה</button> <button class="btn sm danger" onclick="delAbsence('${a.id}')">מחיקה</button></td></tr>`;
+    }).join('') + '</tbody></table>' : '<p class="muted">אין היעדרויות להצגה.</p>';
+}
+$('#absFilter').onchange = renderAbs; $('#absSearch').oninput = renderAbs;
+
+/* ================= SETTINGS ================= */
+function renderSettings(){
+  $('#minForm').innerHTML = ROLES.map((r,i)=>`<label>${esc(r)} – מינימום זמינים ביום<input type="number" min="0" data-i="${i}" value="${+state.minimums[r]||0}"></label>`).join('');
+  document.querySelectorAll('#minForm input').forEach(inp => inp.onchange = () => { state.minimums[ROLES[+inp.dataset.i]] = Math.max(0, +inp.value||0); persist(() => cloud.saveMin(state.minimums)); });
+}
+function download(name, text, mime){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type:mime}));
+  a.download = name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+$('#exportBtn').onclick = () => download(`staff-backup-${TODAY}.json`, JSON.stringify(state,null,2), 'application/json');
+$('#csvBtn').onclick = () => {
+  const days = weekDays();
+  const rows = [['שם','תפקיד','סטודנט',...days.map((d,i)=>`${DAY_NAMES[i]} ${short(d)}`)]];
+  [...state.employees].sort(byRole).forEach(e => rows.push([e.name, e.role, e.student?'כן':'', ...days.map(d=>TYPES[statusOn(e.id,d)].single)]));
+  rows.push(['סה"כ זמינים','','', ...days.map(d=>countsOn(d).available)]);
+  const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  download(`availability-${days[0]}.csv`, csv, 'text/csv;charset=utf-8');
+};
+$('#importFile').onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const s = JSON.parse(r.result);
+      if(!Array.isArray(s.employees) || !Array.isArray(s.absences)) throw new Error('מבנה קובץ לא תקין');
+      if(!confirm(`לייבא ${s.employees.length} עובדים ו-${s.absences.length} היעדרויות? הנתונים הנוכחיים יוחלפו.`)) return;
+      state = Object.assign(blank(), s);
+      persist(() => cloud.replaceAll(state)).then(ok => { if(ok) toast('הייבוא הושלם ✓'); });
+    }catch(err){ alert('ייבוא נכשל: '+err.message); }
+    e.target.value = '';
+  };
+  r.readAsText(f);
+};
+$('#clearBtn').onclick = () => { if(confirm('למחוק את כל העובדים וההיעדרויות? מומלץ לייצא גיבוי קודם.')){ state = blank(); persist(async () => { await cloud.clearAll(); await cloud.saveMin(state.minimums); }); } };
+
+function loadDemo(){
+  if(state.employees.length && !confirm('נתוני הדוגמה יחליפו את הנתונים הקיימים. להמשיך?')) return;
+  const people = [
+    ['יוסי כהן','אחמ"ש',0],['מיכל לוי','אחמ"ש',0],['אבי מזרחי','אחמ"ש',0],
+    ['דניאל פרץ','מאבטח',1],['נועה ביטון','מאבטח',1],['איתי אוחיון','מאבטח',0],['שירה אברהם','מאבטח',1],
+    ['עומר דהן','מאבטח',0],['רועי חדד','מאבטח',1],['תמר גבאי','מאבטח',0],['אלון שפירא','מאבטח',0],
+    ['משה עמר','שומר',0],['יעל אזולאי','שומר',1],['דוד מלכה','שומר',0],['רחל וקנין','שומר',0],
+    ['אורי סעדה','שומר',1],['ליאור טל','שומר',0],['בני אלמוג','שומר',0]
+  ];
+  const emps = people.map(([name,role,st]) => ({id:uid(), name, role, student:!!st, phone:''}));
+  const t = new Date(), D = n => fmt(addDays(t,n));
+  const abs = [
+    [3,'vacation',-2,5,'חופשה משפחתית'],[5,'sick',0,2,''],[7,'reserve',-10,20,'צו 8'],
+    [12,'vacation',1,3,'תקופת מבחנים'],[8,'reserve',9,23,''],[0,'sick',3,4,''],
+    [14,'vacation',30,44,'חו"ל'],[4,'vacation',14,18,''],[11,'reserve',40,70,'']
+  ].map(([i,type,f,to,note]) => ({id:uid(), empId:emps[i].id, type, from:D(f), to:D(to), note}));
+  state = {employees:emps, absences:abs, minimums:{'אחמ"ש':2,'מאבטח':6,'שומר':5}};
+  showTab('dash'); persist(() => cloud.replaceAll(state));
+}
+$('#demoBtn').onclick = loadDemo; $('#demoBtn2').onclick = loadDemo;
+
+/* ================= RENDER ================= */
+function renderAll(){
+  renderHeader(); fillEmpSelect(); renderEmps(); renderAbs(); renderSettings();
+  if(!$('#tab-dash').hidden) renderDashboard();
+}
+resetAbsForm();
+setWeek(0);
+boot();
+</script>
+</body>
+</html>
