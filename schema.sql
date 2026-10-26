@@ -11,8 +11,11 @@ create table if not exists public.employees (
   role        text not null check (role in ('אחמ"ש', 'מאבטח', 'שומר')),
   phone       text default '',
   student     boolean not null default false,
+  shabbat     boolean not null default false,
   created_at  timestamptz not null default now()
 );
+-- עדכון למסד קיים (מוסיף את העמודה אם היא חסרה)
+alter table public.employees add column if not exists shabbat boolean not null default false;
 
 -- ---------- היעדרויות ----------
 create table if not exists public.absences (

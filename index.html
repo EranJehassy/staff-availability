@@ -62,6 +62,8 @@ button.sm{padding:4px 10px;font-size:13px}
 .col li small{color:var(--muted);white-space:nowrap}
 .col li.none{color:var(--muted);justify-content:center}
 .stu{font-style:normal;font-size:11px;background:#e0e7ff;color:#3730a3;border-radius:6px;padding:1px 6px}
+.stu.shb{background:#ccfbf1;color:#115e59}
+.stuText.shbText b{color:#0d9488}
 .chartbox{position:relative;height:280px}
 .stuText{text-align:center;margin-top:8px;color:var(--muted)}
 .stuText b{color:var(--available);font-size:22px}
@@ -151,6 +153,10 @@ dialog textarea{width:100%;height:340px;direction:rtl}
 
     <div class="row">
       <div class="card"><h3>סטודנטים</h3><div class="chartbox"><canvas id="stuChart"></canvas></div><div class="stuText" id="stuText"></div></div>
+      <div class="card"><h3>שומרי שבת</h3><div class="chartbox"><canvas id="shbChart"></canvas></div><div class="stuText shbText" id="shbText"></div></div>
+    </div>
+
+    <div class="row">
       <div class="card" style="flex:2 1 560px">
         <h3>לוח שבועי <span class="muted" style="font-weight:400;font-size:13px">· לחיצה על משבצת = הזנת/עריכת היעדרות</span></h3>
         <div class="tablewrap" id="grid"></div>
@@ -174,6 +180,7 @@ dialog textarea{width:100%;height:340px;direction:rtl}
       <label>תפקיד<select id="eRole"></select></label>
       <label>טלפון (לא חובה)<input id="ePhone" inputmode="tel"></label>
       <label class="check"><input type="checkbox" id="eStudent"> סטודנט</label>
+      <label class="check"><input type="checkbox" id="eShabbat"> שומר שבת</label>
       <div style="display:flex;gap:8px">
         <button class="btn primary" type="submit" id="empSubmit">הוסף</button>
         <button class="btn" type="button" id="empCancel" hidden>ביטול</button>
@@ -282,8 +289,8 @@ const MAX_WEEKS = 52;
 /* ================= חיבור למסד הנתונים (Supabase) =================
    הדבק כאן את שני הערכים מ-Supabase → Project Settings → API.
    אם משאירים ריק – המערכת עובדת במצב מקומי (שמירה בדפדפן בלבד). */
-const SUPABASE_URL      = 'https://brtpklgruzbkgtteazli.supabase.co';   // לדוגמה: 'https://abcdefgh.supabase.co'
-const SUPABASE_ANON_KEY = 'sb_publishable_Z8NtfZYAVeO-VVPyt_BrwA_RCvq_TrD';   // ה-anon / publishable key (מותר שיהיה גלוי – ההגנה היא דרך ההתחברות וה-RLS)
+const SUPABASE_URL      = 'https://brtpklgruzbkgtteazli.supabase.co';   
+const SUPABASE_ANON_KEY = 'sb_publishable_Z8NtfZYAVeO-VVPyt_BrwA_RCvq_TrD';  
 const CLOUD = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 let sb = null;
 
@@ -299,14 +306,14 @@ const $ = s => document.querySelector(s);
 
 /* ================= DATA LAYER ================= */
 const q = async p => { const {data, error} = await p; if(error) throw error; return data; };
-const E2R = e => ({id:e.id, name:e.name, role:e.role, phone:e.phone||'', student:!!e.student});
-const R2E = r => ({id:r.id, name:r.name, role:r.role, phone:r.phone||'', student:!!r.student});
+const E2R = e => ({id:e.id, name:e.name, role:e.role, phone:e.phone||'', student:!!e.student, shabbat:!!e.shabbat});
+const R2E = r => ({id:r.id, name:r.name, role:r.role, phone:r.phone||'', student:!!r.student, shabbat:!!r.shabbat});
 const A2R = a => ({id:a.id, emp_id:a.empId, type:a.type, date_from:a.from, date_to:a.to, note:a.note||''});
 const R2A = r => ({id:r.id, empId:r.emp_id, type:r.type, from:r.date_from, to:r.date_to, note:r.note||''});
 const cloud = {
   async loadAll(){
     const [e, a, s] = await Promise.all([
-      q(sb.from('employees').select('id,name,role,phone,student')),
+      q(sb.from('employees').select('id,name,role,phone,student,shabbat')),
       q(sb.from('absences').select('id,emp_id,type,date_from,date_to,note')),
       q(sb.from('settings').select('value').eq('key','minimums').maybeSingle())
     ]);
@@ -526,7 +533,7 @@ function renderDashboard(){
     const list = emps.filter(e => statusOn(e.id, selDay)===k).sort(byRole);
     return `<div class="col" style="--c:${TYPES[k].color}"><h4>${TYPES[k].label}<span>${list.length}</span></h4><ul>` +
       (list.map(e => { const a = absenceOn(e.id, selDay);
-        return `<li><span>${esc(e.name)}${e.student?' <i class="stu">סטודנט</i>':''}</span><small>${esc(e.role)}${a?` · עד ${short(a.to)}`:''}</small></li>`;
+        return `<li><span>${esc(e.name)}${tags(e, true)}</span><small>${esc(e.role)}${a?` · עד ${short(a.to)}`:''}</small></li>`;
       }).join('') || '<li class="none">—</li>') + '</ul></div>';
   }).join('');
 
@@ -545,14 +552,21 @@ if(window.Chart){
   Chart.defaults.font.family = 'Heebo, system-ui, sans-serif';
   Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#64748b';
 }
+const GROUPS = [
+  {pred:e => e.student, plural:'סטודנטים',   chart:'stuChart', text:'stuText', color:TYPES.available.color},
+  {pred:e => e.shabbat, plural:'שומרי שבת', chart:'shbChart', text:'shbText', color:'#0d9488'}
+];
+const tags = (e, compact) =>
+  (e.student ? ` <i class="stu">${compact?'ס':'סטודנט'}</i>` : '') +
+  (e.shabbat ? ` <i class="stu shb">${compact?'ש':'שומר שבת'}</i>` : '');
 const legendOpts = {position:'bottom', rtl:true, labels:{boxWidth:12, usePointStyle:true}};
 
 function renderCharts(days, flt, emps){
-  {
-    const st = emps.filter(e => e.student), act = st.filter(e => statusOn(e.id, selDay)==='available').length;
+  GROUPS.forEach(g => {
+    const st = emps.filter(g.pred), act = st.filter(e => statusOn(e.id, selDay)==='available').length;
     const p = emps.length ? Math.round(act/emps.length*100) : 0;
-    $('#stuText').innerHTML = `<b>${act}</b> סטודנטים פעילים מתוך ${st.length} סטודנטים · ${emps.length} עובדים סה"כ<br>(${p}% מכוח האדם ביום ${dayName(selDay)})`;
-  }
+    $('#'+g.text).innerHTML = `<b>${act}</b> ${g.plural} זמינים מתוך ${st.length} ${g.plural} · ${emps.length} עובדים סה"כ<br>(${p}% מכוח האדם ביום ${dayName(selDay)})`;
+  });
   if(!window.Chart){ document.querySelectorAll('.chartbox').forEach(b=>b.innerHTML='<p class="muted">הגרפים לא נטענו (אין חיבור לאינטרנט)</p>'); return; }
 
   // 1. זמינות יומית בשבוע – עמודות מוערמות
@@ -576,16 +590,17 @@ function renderCharts(days, flt, emps){
       scales:{x:{stacked:true}, y:{stacked:true, beginAtZero:true, ticks:{precision:0}}}}
   });
 
-  // 3. סטודנטים – סטודנט בהיעדרות יוצא מ"פעילים" ועובר לקטגוריית ההיעדרות עד סיומה
-  const students = emps.filter(e => e.student);
-  const sc = {available:0,vacation:0,sick:0,reserve:0};
-  students.forEach(e => sc[statusOn(e.id, selDay)]++);
-  const non = emps.length - students.length;
-  chart('stuChart', {type:'doughnut',
-    data:{labels:['סטודנטים פעילים','סטודנטים בחופשה','סטודנטים במחלה','סטודנטים במילואים','שאר העובדים'],
-      datasets:[{data:[sc.available, sc.vacation, sc.sick, sc.reserve, non],
-        backgroundColor:[TYPES.available.color, TYPES.vacation.color, TYPES.sick.color, TYPES.reserve.color, '#cbd5e1'], borderWidth:2}]},
-    options:{responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{legend:legendOpts, tooltip:{rtl:true}}}
+  // 3+4. סטודנטים / שומרי שבת – מי שבהיעדרות יוצא מ"זמינים" ועובר לקטגוריית ההיעדרות עד סיומה
+  GROUPS.forEach(g => {
+    const members = emps.filter(g.pred);
+    const sc = {available:0,vacation:0,sick:0,reserve:0};
+    members.forEach(e => sc[statusOn(e.id, selDay)]++);
+    chart(g.chart, {type:'doughnut',
+      data:{labels:[`${g.plural} זמינים`, `${g.plural} בחופשה`, `${g.plural} במחלה`, `${g.plural} במילואים`, 'שאר העובדים'],
+        datasets:[{data:[sc.available, sc.vacation, sc.sick, sc.reserve, emps.length - members.length],
+          backgroundColor:[g.color, TYPES.vacation.color, TYPES.sick.color, TYPES.reserve.color, '#cbd5e1'], borderWidth:2}]},
+      options:{responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{legend:legendOpts, tooltip:{rtl:true}}}
+    });
   });
 }
 
@@ -596,7 +611,7 @@ function renderGrid(days, emps){
   let lastRole = null;
   sorted.forEach(e => {
     if(e.role!==lastRole){ lastRole = e.role; h += `<tr class="role-head"><td colspan="8">${esc(e.role)}</td></tr>`; }
-    h += `<tr><td>${esc(e.name)}${e.student?' <i class="stu">ס</i>':''}</td>` +
+    h += `<tr><td>${esc(e.name)}${tags(e, true)}</td>` +
       days.map(ds => { const s = statusOn(e.id, ds); return `<td class="cell s-${s}" data-emp="${e.id}" data-day="${ds}" title="${esc(e.name)} · ${TYPES[s].single}">${TYPES[s].cell}</td>`; }).join('') + '</tr>';
   });
   h += `</tbody><tfoot><tr><td>זמינים</td>${days.map(ds => {
@@ -626,8 +641,11 @@ function summaryText(){
     const re = emps.filter(e=>e.role===r); const av = re.filter(e=>statusOn(e.id,ds)==='available').length; const m = +state.minimums[r]||0;
     L.push(`• ${r}: ${av} זמינים מתוך ${re.length}${m?` (תקן ${m}${av<m?` – חסרים ${m-av} ⚠️`:''})`:''}`);
   });
-  const st = emps.filter(e=>e.student), sa = st.filter(e=>statusOn(e.id,ds)==='available').length;
-  L.push('', `סטודנטים פעילים: ${sa} מתוך ${st.length} סטודנטים (${emps.length} עובדים סה"כ)`);
+  L.push('');
+  GROUPS.forEach(g => {
+    const st = emps.filter(g.pred), sa = st.filter(e=>statusOn(e.id,ds)==='available').length;
+    L.push(`${g.plural} זמינים: ${sa} מתוך ${st.length} ${g.plural} (${emps.length} עובדים סה"כ)`);
+  });
   L.push('', `זמינות לאורך השבוע ${short(days[0])}–${short(days[6])}:`);
   days.forEach(d => {
     const n = countsOn(d).available, sh = shortages(d);
@@ -651,7 +669,7 @@ function resetEmpForm(){
 $('#empCancel').onclick = resetEmpForm;
 $('#empForm').onsubmit = e => {
   e.preventDefault();
-  const data = {name:$('#eName').value.trim(), role:$('#eRole').value, phone:$('#ePhone').value.trim(), student:$('#eStudent').checked};
+  const data = {name:$('#eName').value.trim(), role:$('#eRole').value, phone:$('#ePhone').value.trim(), student:$('#eStudent').checked, shabbat:$('#eShabbat').checked};
   if(!data.name) return;
   let emp;
   if(editingEmp){ emp = empById(editingEmp); Object.assign(emp, data); }
@@ -660,7 +678,7 @@ $('#empForm').onsubmit = e => {
 };
 function editEmp(id){
   const e = empById(id); editingEmp = id;
-  $('#eName').value = e.name; $('#eRole').value = e.role; $('#ePhone').value = e.phone||''; $('#eStudent').checked = !!e.student;
+  $('#eName').value = e.name; $('#eRole').value = e.role; $('#ePhone').value = e.phone||''; $('#eStudent').checked = !!e.student; $('#eShabbat').checked = !!e.shabbat;
   $('#empFormTitle').textContent = 'עריכת עובד'; $('#empSubmit').textContent = 'שמור'; $('#empCancel').hidden = false;
   window.scrollTo({top:0, behavior:'smooth'});
 }
@@ -675,9 +693,9 @@ function renderEmps(){
   const q = $('#empSearch').value.trim();
   const list = state.employees.filter(e => !q || e.name.includes(q) || e.role.includes(q)).sort(byRole);
   $('#empCount').textContent = state.employees.length;
-  $('#empTable').innerHTML = list.length ? `<table><thead><tr><th>שם</th><th>תפקיד</th><th>סטודנט</th><th>טלפון</th><th>מצב היום</th><th></th></tr></thead><tbody>` +
+  $('#empTable').innerHTML = list.length ? `<table><thead><tr><th>שם</th><th>תפקיד</th><th>סטודנט</th><th>שומר שבת</th><th>טלפון</th><th>מצב היום</th><th></th></tr></thead><tbody>` +
     list.map(e => { const s = statusOn(e.id, TODAY), a = absenceOn(e.id, TODAY);
-      return `<tr><td>${esc(e.name)}</td><td>${esc(e.role)}</td><td>${e.student?'✓':''}</td><td dir="ltr" style="text-align:right">${esc(e.phone||'')}</td>
+      return `<tr><td>${esc(e.name)}</td><td>${esc(e.role)}</td><td>${e.student?'✓':''}</td><td>${e.shabbat?'✓':''}</td><td dir="ltr" style="text-align:right">${esc(e.phone||'')}</td>
       <td><span class="badge" style="background:${TYPES[s].color}">${TYPES[s].single}${a?' עד '+short(a.to):''}</span></td>
       <td><button class="btn sm" onclick="addAbsFor('${e.id}')">+ היעדרות</button> <button class="btn sm" onclick="editEmp('${e.id}')">עריכה</button> <button class="btn sm danger" onclick="delEmp('${e.id}')">מחיקה</button></td></tr>`;
     }).join('') + '</tbody></table>' : '<p class="muted">אין עובדים.</p>';
@@ -725,7 +743,7 @@ function renderAbs(){
     .sort((a,b) => a.from.localeCompare(b.from));
   $('#absTable').innerHTML = list.length ? `<table><thead><tr><th>עובד</th><th>תפקיד</th><th>סוג</th><th>מתאריך</th><th>עד</th><th>ימים</th><th>הערה</th><th></th></tr></thead><tbody>` +
     list.map(a => { const e = empById(a.empId); const active = a.from<=TODAY && TODAY<=a.to;
-      return `<tr><td>${esc(e.name)}${e.student?' <i class="stu">סטודנט</i>':''}</td><td>${esc(e.role)}</td>
+      return `<tr><td>${esc(e.name)}${tags(e)}</td><td>${esc(e.role)}</td>
         <td><span class="badge" style="background:${TYPES[a.type].color}">${TYPES[a.type].single}</span>${active?' <small class="muted">· פעיל</small>':''}</td>
         <td>${full(a.from)}</td><td>${full(a.to)}</td><td>${daysBetween(a.from,a.to)}</td><td>${esc(a.note||'')}</td>
         <td><button class="btn sm" onclick="editAbsence('${a.id}')">עריכה</button> <button class="btn sm danger" onclick="delAbsence('${a.id}')">מחיקה</button></td></tr>`;
@@ -746,9 +764,9 @@ function download(name, text, mime){
 $('#exportBtn').onclick = () => download(`staff-backup-${TODAY}.json`, JSON.stringify(state,null,2), 'application/json');
 $('#csvBtn').onclick = () => {
   const days = weekDays();
-  const rows = [['שם','תפקיד','סטודנט',...days.map((d,i)=>`${DAY_NAMES[i]} ${short(d)}`)]];
-  [...state.employees].sort(byRole).forEach(e => rows.push([e.name, e.role, e.student?'כן':'', ...days.map(d=>TYPES[statusOn(e.id,d)].single)]));
-  rows.push(['סה"כ זמינים','','', ...days.map(d=>countsOn(d).available)]);
+  const rows = [['שם','תפקיד','סטודנט','שומר שבת',...days.map((d,i)=>`${DAY_NAMES[i]} ${short(d)}`)]];
+  [...state.employees].sort(byRole).forEach(e => rows.push([e.name, e.role, e.student?'כן':'', e.shabbat?'כן':'', ...days.map(d=>TYPES[statusOn(e.id,d)].single)]));
+  rows.push(['סה"כ זמינים','','','', ...days.map(d=>countsOn(d).available)]);
   const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
   download(`availability-${days[0]}.csv`, csv, 'text/csv;charset=utf-8');
 };
@@ -778,7 +796,8 @@ function loadDemo(){
     ['משה עמר','שומר',0],['יעל אזולאי','שומר',1],['דוד מלכה','שומר',0],['רחל וקנין','שומר',0],
     ['אורי סעדה','שומר',1],['ליאור טל','שומר',0],['בני אלמוג','שומר',0]
   ];
-  const emps = people.map(([name,role,st]) => ({id:uid(), name, role, student:!!st, phone:''}));
+  const shomrim = new Set([1,5,9,13,16]);
+  const emps = people.map(([name,role,st],i) => ({id:uid(), name, role, student:!!st, shabbat:shomrim.has(i), phone:''}));
   const t = new Date(), D = n => fmt(addDays(t,n));
   const abs = [
     [3,'vacation',-2,5,'חופשה משפחתית'],[5,'sick',0,2,''],[7,'reserve',-10,20,'צו 8'],
