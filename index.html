@@ -99,6 +99,32 @@ dialog textarea{width:100%;height:340px;direction:rtl}
 #toast.bad{background:var(--danger)}
 .brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .sync{font-size:13px;opacity:.9;background:rgba(255,255,255,.12);padding:3px 10px;border-radius:999px}
+/* רענונים */
+.refbar{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--line);margin:4px 0 10px}
+.refbar span{display:block;height:100%}
+.refstats{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;margin-bottom:8px}
+.refstats b{font-size:20px;margin-left:4px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:6px}
+.pend-list{display:flex;flex-wrap:wrap;gap:6px}
+.pend-list span{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:999px;padding:2px 10px;font-size:13px}
+@media (prefers-color-scheme:dark){.pend-list span{background:#3b1010;color:#fecaca;border-color:#7f1d1d}}
+table.ref th.per{text-align:center;min-width:120px}
+table.ref th.per.cur{color:var(--accent);background:var(--bg)}
+table.ref th.per .acts{display:block;margin-top:2px}
+table.ref th.per .acts button{border:0;background:none;cursor:pointer;font-size:12px;color:var(--muted);padding:0 3px}
+td.rc{text-align:center;cursor:pointer}
+td.rc:hover{outline:2px solid var(--accent);outline-offset:-2px}
+td.rc.cur{background:var(--bg)}
+td.rc.done{color:var(--available);font-weight:600}
+td.rc.ex{color:#b45309}
+td.rc.ex small{display:block;color:var(--muted)}
+td.rc.pend{color:var(--danger);font-weight:700}
+td.rc.none{color:var(--muted)}
+td.last{font-weight:600}
+td.last small{display:block;color:var(--muted);font-weight:400}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg label{border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.seg label:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
 @media print{header .weeknav,nav.tabs,.toolbar,.noprint{display:none!important}body{background:#fff}.card{break-inside:avoid}}
 </style>
 </head>
@@ -119,6 +145,7 @@ dialog textarea{width:100%;height:340px;direction:rtl}
   <button data-tab="dash" class="on">📊 דשבורד</button>
   <button data-tab="emps">👥 עובדים</button>
   <button data-tab="abs">📅 היעדרויות</button>
+  <button data-tab="ref">🎯 רענוני ירי</button>
   <button data-tab="settings">⚙️ הגדרות</button>
 </nav>
 
@@ -144,6 +171,11 @@ dialog textarea{width:100%;height:340px;direction:rtl}
     <div class="card">
       <h3 id="colsTitle">מצב העובדים ביום הנבחר</h3>
       <div class="cols" id="cols"></div>
+    </div>
+
+    <div class="card" id="refDashCard" hidden>
+      <h3>🎯 רענון ירי – <span id="refDashName"></span> <a href="#" id="refDashLink" class="muted" style="font-weight:400;font-size:13px">· לטבלת הרענונים</a></h3>
+      <div id="refDash"></div>
     </div>
 
     <div class="row">
@@ -223,6 +255,30 @@ dialog textarea{width:100%;height:340px;direction:rtl}
   </div>
 </section>
 
+<!-- ===== REFRESHERS ===== -->
+<section id="tab-ref" hidden>
+  <div class="card">
+    <div class="toolbar">
+      <h3 style="margin:0;flex:1">🎯 רענוני ירי</h3>
+      <form id="periodForm" style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="newPeriod" placeholder="שם תקופה, למשל: רבעון 4/2026" required style="min-width:220px">
+        <button class="btn primary" type="submit">+ הוסף תקופה</button>
+      </form>
+    </div>
+    <div id="refSummary"></div>
+  </div>
+  <div class="card">
+    <div class="toolbar">
+      <select id="refRole"></select>
+      <select id="refShow"><option value="all">כל העובדים</option><option value="pending">רק מי שטרם ביצע בתקופה הנוכחית</option></select>
+      <span style="flex:1"></span>
+      <button class="btn" id="refCsv">⬇️ ייצוא לאקסל</button>
+    </div>
+    <div class="tablewrap" id="refTable"></div>
+    <p class="muted" style="margin:10px 0 0;font-size:13px">לחיצה על משבצת = עדכון תאריך ביצוע או פטור · "רענון אחרון" מחושב אוטומטית מהתאריך האחרון שבוצע בפועל</p>
+  </div>
+</section>
+
 <!-- ===== SETTINGS ===== -->
 <section id="tab-settings" hidden>
   <div class="card">
@@ -264,6 +320,30 @@ dialog textarea{width:100%;height:340px;direction:rtl}
 </div>
 <div id="toast" hidden></div>
 
+<dialog id="refDlg">
+  <form id="refForm">
+    <h3 style="margin:0 0 4px" id="refDlgTitle"></h3>
+    <p class="muted" style="margin:0 0 14px" id="refDlgSub"></p>
+    <div class="seg">
+      <label><input type="radio" name="rst" value="done"> ✅ בוצע</label>
+      <label><input type="radio" name="rst" value="exempt"> 🟠 פטור</label>
+      <label><input type="radio" name="rst" value="none"> ⬜ טרם ביצע</label>
+    </div>
+    <div class="form" id="rDoneBox" style="margin-top:14px">
+      <label>תאריך ביצוע<input type="date" id="rDate"></label>
+    </div>
+    <div class="form" id="rExBox" style="margin-top:14px">
+      <label>סיבת הפטור<select id="rReason"><option>מילואים</option><option>קורס</option><option>אחר</option></select></label>
+      <label>פירוט <span id="rNoteReq">(לא חובה)</span><input id="rNote" maxlength="200"></label>
+    </div>
+    <div class="err" id="rErr" style="margin-top:8px"></div>
+    <div class="toolbar" style="margin:8px 0 0">
+      <button class="btn primary" type="submit">שמור</button>
+      <button class="btn" type="button" id="rCancel">ביטול</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="sumDlg">
   <h3 style="margin-top:0">סיכום לממונים</h3>
   <textarea id="sumText" readonly></textarea>
@@ -292,14 +372,14 @@ const MAX_WEEKS = 52;
 /* ================= חיבור למסד הנתונים (Supabase) =================
    הדבק כאן את שני הערכים מ-Supabase → Project Settings → API.
    אם משאירים ריק – המערכת עובדת במצב מקומי (שמירה בדפדפן בלבד). */
-const SUPABASE_URL      = 'https://brtpklgruzbkgtteazli.supabase.co';   
-const SUPABASE_ANON_KEY = 'sb_publishable_Z8NtfZYAVeO-VVPyt_BrwA_RCvq_TrD';   
+const SUPABASE_URL      = 'https://brtpklgruzbkgtteazli.supabase.co';   // לדוגמה: 'https://abcdefgh.supabase.co'
+const SUPABASE_ANON_KEY = 'sb_publishable_Z8NtfZYAVeO-VVPyt_BrwA_RCvq_TrD';   // ה-anon / publishable key (מותר שיהיה גלוי – ההגנה היא דרך ההתחברות וה-RLS)
 const CLOUD = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 let sb = null;
 
 /* ================= STATE ================= */
 let state = blank();
-function blank(){ return {employees:[],absences:[],minimums:{'אחמ"ש':1,'מאבטח':3,'שומר':2},minimumsWeekend:{'אחמ"ש':3,'מאבטח':6,'שומר':3}}; }
+function blank(){ return {employees:[],absences:[],periods:[],refresh:[],minimums:{'אחמ"ש':1,'מאבטח':3,'שומר':2},minimumsWeekend:{'אחמ"ש':3,'מאבטח':6,'שומר':3}}; }
 const isWeekend = ds => parse(ds).getDay() >= 5;                       // שישי (5) ושבת (6)
 const minsFor   = ds => isWeekend(ds) ? state.minimumsWeekend : state.minimums;
 const minFor    = (ds, role) => +minsFor(ds)[role] || 0;
@@ -316,33 +396,49 @@ const E2R = e => ({id:e.id, name:e.name, role:e.role, phone:e.phone||'', student
 const R2E = r => ({id:r.id, name:r.name, role:r.role, phone:r.phone||'', student:!!r.student, shabbat:!!r.shabbat});
 const A2R = a => ({id:a.id, emp_id:a.empId, type:a.type, date_from:a.from, date_to:a.to, note:a.note||''});
 const R2A = r => ({id:r.id, empId:r.emp_id, type:r.type, from:r.date_from, to:r.date_to, note:r.note||''});
+const P2R = p => ({id:p.id, name:p.name, sort:p.sort});
+const C2R = c => ({id:c.id, emp_id:c.empId, period_id:c.periodId, status:c.status,
+                   done_date:c.status==='done' ? c.date : null, exempt_reason:c.status==='exempt' ? c.reason : null, note:c.note||''});
+const R2C = r => ({id:r.id, empId:r.emp_id, periodId:r.period_id, status:r.status, date:r.done_date||'', reason:r.exempt_reason||'', note:r.note||''});
 const cloud = {
   async loadAll(){
-    const [e, a, s] = await Promise.all([
+    const [e, a, s, p, c] = await Promise.all([
       q(sb.from('employees').select('id,name,role,phone,student,shabbat')),
       q(sb.from('absences').select('id,emp_id,type,date_from,date_to,note')),
-      q(sb.from('settings').select('key,value'))
+      q(sb.from('settings').select('key,value')),
+      q(sb.from('refresh_periods').select('id,name,sort')),
+      q(sb.from('refresh_records').select('id,emp_id,period_id,status,done_date,exempt_reason,note'))
     ]);
     const set = k => { const row = (s||[]).find(x => x.key===k); return row && row.value; };
     return {employees:e.map(R2E), absences:a.map(R2A),
             minimums: set('minimums') || blank().minimums,
-            minimumsWeekend: set('minimums_weekend') || blank().minimumsWeekend};
+            minimumsWeekend: set('minimums_weekend') || blank().minimumsWeekend,
+            periods: p.map(P2R), refresh: c.map(R2C)};
   },
+  savePeriod: p  => q(sb.from('refresh_periods').upsert(P2R(p))),
+  delPeriod:  id => q(sb.from('refresh_periods').delete().eq('id', id)),   // הרשומות של התקופה נמחקות אוטומטית
+  saveRec:    c  => q(sb.from('refresh_records').upsert(C2R(c))),
+  delRec:     id => q(sb.from('refresh_records').delete().eq('id', id)),
   saveEmp: e  => q(sb.from('employees').upsert(E2R(e))),
   delEmp:  id => q(sb.from('employees').delete().eq('id', id)),        // ההיעדרויות נמחקות אוטומטית (cascade)
   saveAbs: a  => q(sb.from('absences').upsert(A2R(a))),
   delAbs:  id => q(sb.from('absences').delete().eq('id', id)),
   saveMin: () => q(sb.from('settings').upsert([{key:'minimums', value:state.minimums}, {key:'minimums_weekend', value:state.minimumsWeekend}])),
   async clearAll(){
+    await q(sb.from('refresh_records').delete().neq('id', ''));
+    await q(sb.from('refresh_periods').delete().neq('id', ''));
     await q(sb.from('absences').delete().neq('id', ''));
     await q(sb.from('employees').delete().neq('id', ''));
   },
   async replaceAll(s){
     await cloud.clearAll();
-    const ids = new Set(s.employees.map(e => e.id));
-    const abs = s.absences.filter(a => ids.has(a.empId));
+    const ids = new Set(s.employees.map(e => e.id)), pids = new Set(s.periods.map(p => p.id));
+    const abs  = s.absences.filter(a => ids.has(a.empId));
+    const recs = s.refresh.filter(c => ids.has(c.empId) && pids.has(c.periodId));
     if(s.employees.length) await q(sb.from('employees').insert(s.employees.map(E2R)));
     if(abs.length)         await q(sb.from('absences').insert(abs.map(A2R)));
+    if(s.periods.length)   await q(sb.from('refresh_periods').insert(s.periods.map(P2R)));
+    if(recs.length)        await q(sb.from('refresh_records').insert(recs.map(C2R)));
     await cloud.saveMin();
   }
 };
@@ -381,7 +477,7 @@ function onRemote(){ clearTimeout(rtTimer); rtTimer = setTimeout(() => pending ?
 function subscribe(){
   if(rt) return;
   rt = sb.channel('staff-db');
-  ['employees','absences','settings'].forEach(t => rt.on('postgres_changes', {event:'*', schema:'public', table:t}, onRemote));
+  ['employees','absences','settings','refresh_periods','refresh_records'].forEach(t => rt.on('postgres_changes', {event:'*', schema:'public', table:t}, onRemote));
   rt.subscribe();
 }
 
@@ -496,7 +592,7 @@ function renderHeader(){
 /* ================= TABS ================= */
 function showTab(t){
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab===t));
-  ['dash','emps','abs','settings'].forEach(x => $('#tab-'+x).hidden = x!==t);
+  ['dash','emps','abs','ref','settings'].forEach(x => $('#tab-'+x).hidden = x!==t);
   if(t==='dash') renderDashboard();
   window.scrollTo({top:0});
 }
@@ -548,6 +644,11 @@ function renderDashboard(){
 
   renderCharts(days, flt, emps);
   renderGrid(days, emps);
+
+  // רענון ירי – התקופה הנוכחית
+  const cp = currentPeriod();
+  $('#refDashCard').hidden = !cp;
+  if(cp){ $('#refDashName').textContent = cp.name; $('#refDash').innerHTML = refBlock(emps, cp); }
 }
 
 /* ---------- charts ---------- */
@@ -655,6 +756,12 @@ function summaryText(){
     const st = emps.filter(g.pred), sa = st.filter(e=>statusOn(e.id,ds)==='available').length;
     L.push(`${g.plural} זמינים: ${sa} מתוך ${st.length} ${g.plural} (${emps.length} עובדים סה"כ)`);
   });
+  const cp = currentPeriod();
+  if(cp){
+    const s = refStats(emps, cp);
+    L.push('', `רענון ירי – ${cp.name}: ביצעו ${s.done.length}, פטורים ${s.exempt.length}, טרם ביצעו ${s.pending.length} (מתוך ${emps.length})`);
+    if(s.pending.length) L.push(`טרם ביצעו: ${s.pending.sort(byRole).map(e => `${e.name} (${e.role})`).join(', ')}`);
+  }
   L.push('', `זמינות לאורך השבוע ${short(days[0])}–${short(days[6])}:`);
   days.forEach(d => {
     const n = countsOn(d).available, sh = shortages(d);
@@ -696,6 +803,7 @@ function delEmp(id){
   if(!confirm(`למחוק את ${e.name}? כל ההיעדרויות שלו יימחקו גם.`)) return;
   state.employees = state.employees.filter(x=>x.id!==id);
   state.absences = state.absences.filter(a=>a.empId!==id);
+  state.refresh  = state.refresh.filter(c=>c.empId!==id);
   persist(() => cloud.delEmp(id));
 }
 function renderEmps(){
@@ -760,6 +868,155 @@ function renderAbs(){
 }
 $('#absFilter').onchange = renderAbs; $('#absSearch').oninput = renderAbs;
 
+/* ================= REFRESHERS (רענוני ירי) ================= */
+const EX_COLOR = '#f59e0b';
+const sortedPeriods = () => [...state.periods].sort((a,b) => a.sort - b.sort);
+const currentPeriod = () => { const p = sortedPeriods(); return p[p.length-1] || null; };   // התקופה האחרונה שנוספה = הנוכחית
+const recOf = (empId, periodId) => state.refresh.find(c => c.empId===empId && c.periodId===periodId);
+function lastDone(empId){   // התאריך האחרון שבו העובד ביצע רענון בפועל (פטור לא נחשב)
+  let best = '';
+  state.refresh.forEach(c => { if(c.empId===empId && c.status==='done' && c.date > best) best = c.date; });
+  return best;
+}
+function agoText(ds){
+  const d = parse(ds), t = new Date();
+  const m = (t.getFullYear()-d.getFullYear())*12 + t.getMonth()-d.getMonth() - (t.getDate()<d.getDate() ? 1 : 0);
+  return m < 0 ? 'תאריך עתידי' : m === 0 ? 'החודש' : m === 1 ? 'לפני חודש' : `לפני ${m} חודשים`;
+}
+function refStats(emps, period){
+  const s = {done:[], exempt:[], pending:[]};
+  if(period) emps.forEach(e => { const c = recOf(e.id, period.id); (c ? s[c.status] : s.pending).push(e); });
+  return s;
+}
+function refBlock(emps, period){
+  const s = refStats(emps, period), n = emps.length || 1, pct = k => (s[k].length/n*100).toFixed(1)+'%';
+  const reasons = {};
+  s.exempt.forEach(e => { const r = recOf(e.id, period.id).reason; reasons[r] = (reasons[r]||0) + 1; });
+  const rtxt = Object.keys(reasons).map(r => `${r} ${reasons[r]}`).join(', ');
+  return `<div class="refstats">
+      <span><i class="dot" style="background:var(--available)"></i>ביצעו <b>${s.done.length}</b></span>
+      <span><i class="dot" style="background:${EX_COLOR}"></i>פטורים <b>${s.exempt.length}</b>${rtxt ? ` <small class="muted">(${esc(rtxt)})</small>` : ''}</span>
+      <span><i class="dot" style="background:var(--danger)"></i>טרם ביצעו <b>${s.pending.length}</b></span>
+      <span class="muted">מתוך ${emps.length} עובדים</span></div>
+    <div class="refbar"><span style="width:${pct('done')};background:var(--available)"></span><span style="width:${pct('exempt')};background:${EX_COLOR}"></span><span style="width:${pct('pending')};background:var(--danger)"></span></div>
+    ${s.pending.length
+      ? `<div class="muted" style="font-size:13px;margin-bottom:6px">טרם ביצעו:</div><div class="pend-list">${s.pending.sort(byRole).map(e => `<span>${esc(e.name)} · ${esc(e.role)}</span>`).join('')}</div>`
+      : '<div style="color:var(--available);font-weight:600">✓ כל העובדים ביצעו רענון או פטורים</div>'}`;
+}
+function refCell(e, p, isCur){
+  const c = recOf(e.id, p.id), at = `data-e="${e.id}" data-p="${p.id}"`, cur = isCur ? ' cur' : '';
+  if(!c) return `<td class="rc ${isCur ? 'pend' : 'none'}${cur}" ${at}>${isCur ? 'טרם ביצע' : '—'}</td>`;
+  if(c.status === 'done') return `<td class="rc done${cur}" ${at}>${full(c.date)}</td>`;
+  return `<td class="rc ex${cur}" ${at}>פטור<small>${esc(c.reason)}${c.note ? ' · '+esc(c.note) : ''}</small></td>`;
+}
+$('#refRole').innerHTML = '<option value="">כל התפקידים</option>' + ROLES.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+$('#refRole').onchange = $('#refShow').onchange = () => renderRef();
+
+function renderRef(){
+  const cur = currentPeriod(), cols = sortedPeriods().reverse();   // נוכחי ראשון, אחריו התקופות הקודמות
+  const rf = $('#refRole').value, onlyPending = $('#refShow').value === 'pending';
+  const emps = state.employees.filter(e => !rf || e.role===rf);
+  $('#refSummary').innerHTML = cur
+    ? `<h4 style="margin:4px 0 8px">תקופה נוכחית: ${esc(cur.name)}</h4>` + refBlock(emps, cur)
+    : '<p class="muted" style="margin:0">עדיין אין תקופות רענון. הוסף תקופה ראשונה (למשל "רבעון 4/2026") כדי להתחיל.</p>';
+  if(!state.employees.length){ $('#refTable').innerHTML = '<p class="muted">אין עובדים. הוסף עובדים בלשונית "עובדים".</p>'; return; }
+  const list = emps.filter(e => !onlyPending || (cur && !recOf(e.id, cur.id))).sort(byRole);
+  let h = `<table class="ref"><thead><tr><th>עובד</th><th>תפקיד</th><th>רענון אחרון</th>` +
+    cols.map((p,i) => `<th class="per ${i===0 ? 'cur' : ''}">${esc(p.name)}${i===0 ? '<br><small>(נוכחי)</small>' : ''}
+      <span class="acts"><button data-ren="${p.id}" title="שינוי שם">✏️</button><button data-delp="${p.id}" title="מחיקת תקופה">🗑️</button></span></th>`).join('') +
+    '</tr></thead><tbody>';
+  list.forEach(e => {
+    const ld = lastDone(e.id);
+    h += `<tr><td>${esc(e.name)}${tags(e, true)}</td><td>${esc(e.role)}</td>
+      <td class="last">${ld ? full(ld) + `<small>${agoText(ld)}</small>` : '<span class="muted">—</span>'}</td>` +
+      cols.map((p,i) => refCell(e, p, i===0)).join('') + '</tr>';
+  });
+  if(!list.length) h += `<tr><td colspan="${3+cols.length}" class="muted" style="text-align:center">אין עובדים להצגה</td></tr>`;
+  $('#refTable').innerHTML = h + '</tbody></table>';
+  document.querySelectorAll('#refTable td.rc').forEach(td => td.onclick = () => openRef(td.dataset.e, td.dataset.p));
+  document.querySelectorAll('#refTable [data-ren]').forEach(b => b.onclick = () => renamePeriod(b.dataset.ren));
+  document.querySelectorAll('#refTable [data-delp]').forEach(b => b.onclick = () => deletePeriod(b.dataset.delp));
+}
+
+$('#periodForm').onsubmit = e => {
+  e.preventDefault();
+  const name = $('#newPeriod').value.trim();
+  if(!name) return;
+  if(state.periods.some(p => p.name===name) && !confirm(`כבר קיימת תקופה בשם "${name}". להוסיף בכל זאת?`)) return;
+  const p = {id:uid(), name, sort:Math.max(0, ...state.periods.map(x => x.sort)) + 1};
+  state.periods.push(p); $('#newPeriod').value = '';
+  persist(() => cloud.savePeriod(p)).then(ok => { if(ok) toast(`נוספה התקופה "${name}" – היא עכשיו התקופה הנוכחית`); });
+};
+function renamePeriod(id){
+  const p = state.periods.find(x => x.id===id);
+  const name = (prompt('שם חדש לתקופה:', p.name) || '').trim();
+  if(!name || name===p.name) return;
+  p.name = name; persist(() => cloud.savePeriod(p));
+}
+function deletePeriod(id){
+  const p = state.periods.find(x => x.id===id), n = state.refresh.filter(c => c.periodId===id).length;
+  if(!confirm(`למחוק את התקופה "${p.name}"?${n ? `\n${n} רשומות רענון של התקופה יימחקו גם.` : ''}`)) return;
+  state.periods = state.periods.filter(x => x.id!==id);
+  state.refresh = state.refresh.filter(c => c.periodId!==id);
+  persist(() => cloud.delPeriod(id));
+}
+
+/* ---------- חלון עדכון משבצת ---------- */
+let refCtx = null;
+const rstVal = () => document.querySelector('input[name=rst]:checked').value;
+function syncRefDlg(){
+  $('#rDoneBox').hidden = rstVal() !== 'done';
+  $('#rExBox').hidden   = rstVal() !== 'exempt';
+  $('#rNoteReq').textContent = $('#rReason').value === 'אחר' ? '(חובה)' : '(לא חובה)';
+  $('#rErr').textContent = '';
+}
+document.querySelectorAll('input[name=rst]').forEach(r => r.onchange = syncRefDlg);
+$('#rReason').onchange = syncRefDlg;
+$('#rCancel').onclick = () => $('#refDlg').close();
+function openRef(empId, periodId){
+  const e = empById(empId), p = state.periods.find(x => x.id===periodId), c = recOf(empId, periodId);
+  refCtx = {empId, periodId};
+  $('#refDlgTitle').textContent = `${e.name} · ${e.role}`;
+  $('#refDlgSub').textContent = `רענון ירי – ${p.name}`;
+  document.querySelector(`input[name=rst][value=${c ? c.status : 'done'}]`).checked = true;
+  $('#rDate').value   = (c && c.date)   || TODAY;
+  $('#rReason').value = (c && c.reason) || 'מילואים';
+  $('#rNote').value   = (c && c.note)   || '';
+  syncRefDlg(); $('#refDlg').showModal();
+}
+$('#refForm').onsubmit = e => {
+  e.preventDefault();
+  const {empId, periodId} = refCtx, v = rstVal(), old = recOf(empId, periodId);
+  if(v === 'none'){
+    $('#refDlg').close();
+    if(old){ state.refresh = state.refresh.filter(c => c!==old); persist(() => cloud.delRec(old.id)); }
+    return;
+  }
+  const rec = {id:`${empId}_${periodId}`, empId, periodId, status:v, date:'', reason:'', note:''};
+  if(v === 'done'){
+    if(!$('#rDate').value){ $('#rErr').textContent = 'יש לבחור תאריך ביצוע'; return; }
+    rec.date = $('#rDate').value;
+  } else {
+    rec.reason = $('#rReason').value; rec.note = $('#rNote').value.trim();
+    if(rec.reason === 'אחר' && !rec.note){ $('#rErr').textContent = 'בפטור מסוג "אחר" צריך לכתוב פירוט'; return; }
+  }
+  state.refresh = state.refresh.filter(c => c!==old).concat(rec);
+  $('#refDlg').close(); persist(() => cloud.saveRec(rec));
+};
+
+$('#refCsv').onclick = () => {
+  const cols = sortedPeriods().reverse();
+  const rows = [['שם','תפקיד','רענון אחרון', ...cols.map((p,i) => p.name + (i===0 ? ' (נוכחי)' : ''))]];
+  [...state.employees].sort(byRole).forEach(e => {
+    const ld = lastDone(e.id);
+    rows.push([e.name, e.role, ld ? full(ld) : '', ...cols.map(p => {
+      const c = recOf(e.id, p.id);
+      return !c ? '' : c.status==='done' ? full(c.date) : `פטור – ${c.reason}${c.note ? ' ('+c.note+')' : ''}`;
+    })]);
+  });
+  download(`refresh-${TODAY}.csv`, '﻿' + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n'), 'text/csv;charset=utf-8');
+};
+
 /* ================= SETTINGS ================= */
 function renderSettings(){
   [['#minForm','minimums'], ['#minFormW','minimumsWeekend']].forEach(([sel, key]) => {
@@ -818,16 +1075,29 @@ function loadDemo(){
     [12,'vacation',1,3,'תקופת מבחנים'],[8,'reserve',9,23,''],[0,'sick',3,4,''],
     [14,'vacation',30,44,'חו"ל'],[4,'vacation',14,18,''],[11,'reserve',40,70,'']
   ].map(([i,type,f,to,note]) => ({id:uid(), empId:emps[i].id, type, from:D(f), to:D(to), note}));
-  state = {employees:emps, absences:abs, minimums:{'אחמ"ש':2,'מאבטח':6,'שומר':5}, minimumsWeekend:{...state.minimumsWeekend}};
+  // רענוני ירי לדוגמה: שתי תקופות קודמות שכולם ביצעו, ותקופה נוכחית חלקית
+  const periods = ['רבעון 2/2026','רבעון 3/2026','רבעון 4/2026'].map((name,i) => ({id:uid(), name, sort:i+1}));
+  const refresh = [];
+  const rec = (i, p, status, extra) => refresh.push({id:`${emps[i].id}_${p.id}`, empId:emps[i].id, periodId:p.id, status, date:'', reason:'', note:'', ...extra});
+  emps.forEach((e,i) => {
+    rec(i, periods[0], 'done', {date:D(-200 + i)});
+    if(i === 14) rec(i, periods[1], 'exempt', {reason:'קורס', note:'קורס מאבטחים'});
+    else         rec(i, periods[1], 'done', {date:D(-110 + i)});
+    if(i === 7)       rec(i, periods[2], 'exempt', {reason:'מילואים', note:'צו 8'});
+    else if(i === 16) rec(i, periods[2], 'exempt', {reason:'אחר', note:'באישור קב"ט'});
+    else if(i % 4 !== 1) rec(i, periods[2], 'done', {date:D(-25 + i)});
+  });
+  state = {employees:emps, absences:abs, periods, refresh, minimums:{'אחמ"ש':2,'מאבטח':6,'שומר':5}, minimumsWeekend:{...state.minimumsWeekend}};
   showTab('dash'); persist(() => cloud.replaceAll(state));
 }
 $('#demoBtn').onclick = loadDemo; $('#demoBtn2').onclick = loadDemo;
 
 /* ================= RENDER ================= */
 function renderAll(){
-  renderHeader(); fillEmpSelect(); renderEmps(); renderAbs(); renderSettings();
+  renderHeader(); fillEmpSelect(); renderEmps(); renderAbs(); renderRef(); renderSettings();
   if(!$('#tab-dash').hidden) renderDashboard();
 }
+$('#refDashLink').onclick = e => { e.preventDefault(); showTab('ref'); };
 resetAbsForm();
 setWeek(0);
 boot();
