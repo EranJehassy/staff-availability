@@ -37,7 +37,8 @@ create table if not exists public.settings (
   value  jsonb not null
 );
 insert into public.settings (key, value)
-values ('minimums', '{"אחמ\"ש": 1, "מאבטח": 3, "שומר": 2}'::jsonb)
+values ('minimums',         '{"אחמ\"ש": 1, "מאבטח": 3, "שומר": 2}'::jsonb),
+       ('minimums_weekend', '{"אחמ\"ש": 3, "מאבטח": 6, "שומר": 3}'::jsonb)
 on conflict (key) do nothing;
 
 -- ---------- אבטחה: רק משתמשים מחוברים יכולים לקרוא ולכתוב ----------
