@@ -99,6 +99,13 @@ dialog textarea{width:100%;height:340px;direction:rtl}
 #toast.bad{background:var(--danger)}
 .brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .sync{font-size:13px;opacity:.9;background:rgba(255,255,255,.12);padding:3px 10px;border-radius:999px}
+/* משמרות */
+table.shifts td,table.shifts th{text-align:center}
+table.shifts td:first-child,table.shifts th:first-child{text-align:right}
+.gap-bad{color:var(--danger);font-weight:700}
+.gap-ok{color:var(--available);font-weight:700}
+.gap-warn{color:#b45309;font-weight:700}
+.shift-note{font-size:13px;margin-top:10px;padding:8px 12px;border-radius:10px;background:var(--bg)}
 /* רענונים */
 .refbar{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--line);margin:4px 0 10px}
 .refbar span{display:block;height:100%}
@@ -173,6 +180,14 @@ td.last small{display:block;color:var(--muted);font-weight:400}
       <div class="cols" id="cols"></div>
     </div>
 
+    <div class="card" id="shiftCard">
+      <h3>🗓️ כיסוי משמרות – <span id="shiftWeek"></span></h3>
+      <div class="row" style="gap:16px;align-items:flex-start">
+        <div style="flex:1 1 360px"><div class="chartbox"><canvas id="shiftChart"></canvas></div></div>
+        <div style="flex:1.4 1 460px"><div class="tablewrap" id="shiftTable"></div><div id="shiftNotes"></div></div>
+      </div>
+    </div>
+
     <div class="card" id="refDashCard" hidden>
       <h3>🎯 רענון ירי – <span id="refDashName"></span> <a href="#" id="refDashLink" class="muted" style="font-weight:400;font-size:13px">· לטבלת הרענונים</a></h3>
       <div id="refDash"></div>
@@ -212,6 +227,7 @@ td.last small{display:block;color:var(--muted);font-weight:400}
       <label>תפקיד<select id="eRole"></select></label>
       <label>טלפון (לא חובה)<input id="ePhone" inputmode="tel"></label>
       <label class="check"><input type="checkbox" id="eStudent"> סטודנט</label>
+      <label>משמרות בשבוע (מקסימום)<input type="number" id="eShifts" min="0" max="21" step="1" placeholder="למשל 5"></label>
       <label class="check"><input type="checkbox" id="eShabbat"> שומר שבת</label>
       <div style="display:flex;gap:8px">
         <button class="btn primary" type="submit" id="empSubmit">הוסף</button>
@@ -288,6 +304,11 @@ td.last small{display:block;color:var(--muted);font-weight:400}
     <div class="form" id="minForm" style="margin-bottom:18px"></div>
     <h4 style="margin:0 0 8px">שישי ושבת</h4>
     <div class="form" id="minFormW"></div>
+  </div>
+  <div class="card">
+    <h3>משמרות נדרשות בשבוע לפי תפקיד</h3>
+    <p class="muted" style="margin-top:0">המערכת משווה את הנדרש לסך המשמרות שהעובדים בכל תפקיד נותנים בשבוע (לפי "משמרות בשבוע" בכרטיס העובד), ומורידה משמרות של מי שנעדר.</p>
+    <div class="form" id="needForm"></div>
   </div>
   <div class="card">
     <h3>גיבוי ושחזור</h3>
@@ -379,7 +400,8 @@ let sb = null;
 
 /* ================= STATE ================= */
 let state = blank();
-function blank(){ return {employees:[],absences:[],periods:[],refresh:[],minimums:{'אחמ"ש':1,'מאבטח':3,'שומר':2},minimumsWeekend:{'אחמ"ש':3,'מאבטח':6,'שומר':3}}; }
+function blank(){ return {employees:[],absences:[],periods:[],refresh:[],minimums:{'אחמ"ש':1,'מאבטח':3,'שומר':2},minimumsWeekend:{'אחמ"ש':3,'מאבטח':6,'שומר':3},
+  shiftNeeds:{'אחמ"ש':21,'מאבטח':47,'שומר':21}}; }   // משמרות נדרשות בשבוע לכל תפקיד
 const isWeekend = ds => parse(ds).getDay() >= 5;                       // שישי (5) ושבת (6)
 const minsFor   = ds => isWeekend(ds) ? state.minimumsWeekend : state.minimums;
 const minFor    = (ds, role) => +minsFor(ds)[role] || 0;
@@ -392,8 +414,8 @@ const $ = s => document.querySelector(s);
 
 /* ================= DATA LAYER ================= */
 const q = async p => { const {data, error} = await p; if(error) throw error; return data; };
-const E2R = e => ({id:e.id, name:e.name, role:e.role, phone:e.phone||'', student:!!e.student, shabbat:!!e.shabbat});
-const R2E = r => ({id:r.id, name:r.name, role:r.role, phone:r.phone||'', student:!!r.student, shabbat:!!r.shabbat});
+const E2R = e => ({id:e.id, name:e.name, role:e.role, phone:e.phone||'', student:!!e.student, shabbat:!!e.shabbat, max_shifts:+e.maxShifts||0});
+const R2E = r => ({id:r.id, name:r.name, role:r.role, phone:r.phone||'', student:!!r.student, shabbat:!!r.shabbat, maxShifts:+r.max_shifts||0});
 const A2R = a => ({id:a.id, emp_id:a.empId, type:a.type, date_from:a.from, date_to:a.to, note:a.note||''});
 const R2A = r => ({id:r.id, empId:r.emp_id, type:r.type, from:r.date_from, to:r.date_to, note:r.note||''});
 const P2R = p => ({id:p.id, name:p.name, sort:p.sort});
@@ -403,7 +425,7 @@ const R2C = r => ({id:r.id, empId:r.emp_id, periodId:r.period_id, status:r.statu
 const cloud = {
   async loadAll(){
     const [e, a, s, p, c] = await Promise.all([
-      q(sb.from('employees').select('id,name,role,phone,student,shabbat')),
+      q(sb.from('employees').select('id,name,role,phone,student,shabbat,max_shifts')),
       q(sb.from('absences').select('id,emp_id,type,date_from,date_to,note')),
       q(sb.from('settings').select('key,value')),
       q(sb.from('refresh_periods').select('id,name,sort')),
@@ -413,6 +435,7 @@ const cloud = {
     return {employees:e.map(R2E), absences:a.map(R2A),
             minimums: set('minimums') || blank().minimums,
             minimumsWeekend: set('minimums_weekend') || blank().minimumsWeekend,
+            shiftNeeds: set('shift_needs') || blank().shiftNeeds,
             periods: p.map(P2R), refresh: c.map(R2C)};
   },
   savePeriod: p  => q(sb.from('refresh_periods').upsert(P2R(p))),
@@ -423,7 +446,7 @@ const cloud = {
   delEmp:  id => q(sb.from('employees').delete().eq('id', id)),        // ההיעדרויות נמחקות אוטומטית (cascade)
   saveAbs: a  => q(sb.from('absences').upsert(A2R(a))),
   delAbs:  id => q(sb.from('absences').delete().eq('id', id)),
-  saveMin: () => q(sb.from('settings').upsert([{key:'minimums', value:state.minimums}, {key:'minimums_weekend', value:state.minimumsWeekend}])),
+  saveMin: () => q(sb.from('settings').upsert([{key:'minimums', value:state.minimums}, {key:'minimums_weekend', value:state.minimumsWeekend}, {key:'shift_needs', value:state.shiftNeeds}])),
   async clearAll(){
     await q(sb.from('refresh_records').delete().neq('id', ''));
     await q(sb.from('refresh_periods').delete().neq('id', ''));
@@ -644,6 +667,7 @@ function renderDashboard(){
 
   renderCharts(days, flt, emps);
   renderGrid(days, emps);
+  renderShifts(days);
 
   // רענון ירי – התקופה הנוכחית
   const cp = currentPeriod();
@@ -762,6 +786,12 @@ function summaryText(){
     L.push('', `רענון ירי – ${cp.name}: ביצעו ${s.done.length}, פטורים ${s.exempt.length}, טרם ביצעו ${s.pending.length} (מתוך ${emps.length})`);
     if(s.pending.length) L.push(`טרם ביצעו: ${s.pending.sort(byRole).map(e => `${e.name} (${e.role})`).join(', ')}`);
   }
+  L.push('', `כיסוי משמרות בשבוע ${short(days[0])}–${short(days[6])}:`);
+  ROLES.forEach(r => {
+    const c = shiftCoverage(r, days);
+    const gap = c.gapWeek > 0 ? `חסרות ${c.gapWeek} ⚠️` : c.gapWeek < 0 ? `עודף ${-c.gapWeek}` : 'מכוסה';
+    L.push(`• ${r}: נדרש ${c.need} | קיבולת ${c.full} | זמין השבוע ${c.week} → ${gap}${c.recruit ? ` | גיוס נדרש: כ-${c.recruit} ${c.recruit===1?'עובד':'עובדים'}` : ''}`);
+  });
   L.push('', `זמינות לאורך השבוע ${short(days[0])}–${short(days[6])}:`);
   days.forEach(d => {
     const n = countsOn(d).available, sh = shortages(d);
@@ -785,7 +815,8 @@ function resetEmpForm(){
 $('#empCancel').onclick = resetEmpForm;
 $('#empForm').onsubmit = e => {
   e.preventDefault();
-  const data = {name:$('#eName').value.trim(), role:$('#eRole').value, phone:$('#ePhone').value.trim(), student:$('#eStudent').checked, shabbat:$('#eShabbat').checked};
+  const data = {name:$('#eName').value.trim(), role:$('#eRole').value, phone:$('#ePhone').value.trim(), student:$('#eStudent').checked, shabbat:$('#eShabbat').checked,
+                maxShifts:Math.max(0, Math.min(21, parseInt($('#eShifts').value, 10) || 0))};
   if(!data.name) return;
   let emp;
   if(editingEmp){ emp = empById(editingEmp); Object.assign(emp, data); }
@@ -794,7 +825,7 @@ $('#empForm').onsubmit = e => {
 };
 function editEmp(id){
   const e = empById(id); editingEmp = id;
-  $('#eName').value = e.name; $('#eRole').value = e.role; $('#ePhone').value = e.phone||''; $('#eStudent').checked = !!e.student; $('#eShabbat').checked = !!e.shabbat;
+  $('#eName').value = e.name; $('#eRole').value = e.role; $('#ePhone').value = e.phone||''; $('#eStudent').checked = !!e.student; $('#eShabbat').checked = !!e.shabbat; $('#eShifts').value = e.maxShifts || '';
   $('#empFormTitle').textContent = 'עריכת עובד'; $('#empSubmit').textContent = 'שמור'; $('#empCancel').hidden = false;
   window.scrollTo({top:0, behavior:'smooth'});
 }
@@ -810,9 +841,9 @@ function renderEmps(){
   const q = $('#empSearch').value.trim();
   const list = state.employees.filter(e => !q || e.name.includes(q) || e.role.includes(q)).sort(byRole);
   $('#empCount').textContent = state.employees.length;
-  $('#empTable').innerHTML = list.length ? `<table><thead><tr><th>שם</th><th>תפקיד</th><th>סטודנט</th><th>שומר שבת</th><th>טלפון</th><th>מצב היום</th><th></th></tr></thead><tbody>` +
+  $('#empTable').innerHTML = list.length ? `<table><thead><tr><th>שם</th><th>תפקיד</th><th>סטודנט</th><th>שומר שבת</th><th>משמרות/שבוע</th><th>טלפון</th><th>מצב היום</th><th></th></tr></thead><tbody>` +
     list.map(e => { const s = statusOn(e.id, TODAY), a = absenceOn(e.id, TODAY);
-      return `<tr><td>${esc(e.name)}</td><td>${esc(e.role)}</td><td>${e.student?'✓':''}</td><td>${e.shabbat?'✓':''}</td><td dir="ltr" style="text-align:right">${esc(e.phone||'')}</td>
+      return `<tr><td>${esc(e.name)}</td><td>${esc(e.role)}</td><td>${e.student?'✓':''}</td><td>${e.shabbat?'✓':''}</td><td>${e.maxShifts ? e.maxShifts : '<span class="muted" title="לא הוגדר">—</span>'}</td><td dir="ltr" style="text-align:right">${esc(e.phone||'')}</td>
       <td><span class="badge" style="background:${TYPES[s].color}">${TYPES[s].single}${a?' עד '+short(a.to):''}</span></td>
       <td><button class="btn sm" onclick="addAbsFor('${e.id}')">+ היעדרות</button> <button class="btn sm" onclick="editEmp('${e.id}')">עריכה</button> <button class="btn sm danger" onclick="delEmp('${e.id}')">מחיקה</button></td></tr>`;
     }).join('') + '</tbody></table>' : '<p class="muted">אין עובדים.</p>';
@@ -867,6 +898,56 @@ function renderAbs(){
     }).join('') + '</tbody></table>' : '<p class="muted">אין היעדרויות להצגה.</p>';
 }
 $('#absFilter').onchange = renderAbs; $('#absSearch').oninput = renderAbs;
+
+/* ================= SHIFTS (כיסוי משמרות) ================= */
+// קיבולת = סך המשמרות שעובדי התפקיד נותנים בשבוע.
+// "זמין השבוע" מוריד באופן יחסי ימים שבהם העובד נעדר (למשל 3 ימי מילואים = 3/7 מהמשמרות שלו).
+function shiftCoverage(role, days){
+  const emps = state.employees.filter(e => e.role===role);
+  let full = 0, week = 0, lost = 0;
+  const unset = emps.filter(e => !(+e.maxShifts));
+  emps.forEach(e => {
+    const m = +e.maxShifts || 0, ad = days.filter(d => statusOn(e.id, d)==='available').length;
+    full += m; week += m * ad / 7;
+  });
+  week = Math.round(week);
+  const need = +state.shiftNeeds[role] || 0, set = emps.length - unset.length;
+  const avg = set ? full / set : 0;
+  const gapFull = need - full;                                   // חוסר קבוע – גם בלי היעדרויות
+  return {role, need, full, week, lost:full - week, gapFull, gapWeek:need - week, avg, unset, count:emps.length,
+          recruit: gapFull > 0 && avg > 0 ? Math.ceil(gapFull / avg) : 0};
+}
+const gapTxt = g => g > 0 ? `<span class="gap-bad">חסרות ${g}</span>` : g < 0 ? `<span class="gap-ok">עודף ${-g}</span>` : '<span class="gap-ok">מכוסה</span>';
+
+function renderShifts(days){
+  $('#shiftWeek').textContent = `שבוע ${short(days[0])}–${short(days[6])}`;
+  const rf = $('#roleFilter').value;
+  const rows = ROLES.filter(r => !rf || r===rf).map(r => shiftCoverage(r, days));
+  $('#shiftTable').innerHTML = `<table class="shifts"><thead><tr><th>תפקיד</th><th>נדרש</th><th>קיבולת מלאה</th><th>זמין השבוע</th><th>פער השבוע</th><th>גיוס נדרש</th></tr></thead><tbody>` +
+    rows.map(c => `<tr><td><b>${esc(c.role)}</b> <small class="muted">(${c.count} עובדים)</small></td>
+      <td>${c.need}</td><td>${c.full}</td>
+      <td>${c.week}${c.lost ? ` <small class="muted">(−${c.lost} היעדרויות)</small>` : ''}</td>
+      <td>${gapTxt(c.gapWeek)}</td>
+      <td>${c.recruit ? `<span class="gap-bad">~${c.recruit} ${c.recruit===1?'עובד':'עובדים'}</span>` : c.gapFull > 0 ? '<span class="gap-warn">יש להגדיר משמרות</span>' : '<span class="gap-ok">—</span>'}</td></tr>`).join('') +
+    '</tbody></table>';
+  const notes = [];
+  rows.filter(c => c.recruit).forEach(c => notes.push(`<b>${esc(c.role)}:</b> גם בלי היעדרויות חסרות ${c.gapFull} משמרות בשבוע. בממוצע של ${c.avg.toFixed(1)} משמרות לעובד, צריך לגייס כ-${c.recruit} ${c.recruit===1?'עובד':'עובדים'}.${c.gapWeek > c.gapFull ? ` השבוע, עם ההיעדרויות, חסרות ${c.gapWeek} משמרות.` : ''}`));
+  rows.filter(c => !c.recruit && c.gapWeek > 0).forEach(c => notes.push(`<b>${esc(c.role)}:</b> הקיבולת מספיקה בדרך כלל, אבל השבוע חסרות ${c.gapWeek} משמרות בגלל היעדרויות.`));
+  const unset = rows.flatMap(c => c.unset);
+  if(unset.length) notes.push(`<span class="gap-warn">⚠️ ${unset.length===1 ? 'לעובד אחד לא הוגדרה כמות משמרות, והוא לא נספר' : `ל-${unset.length} עובדים לא הוגדרה כמות משמרות, והם לא נספרים`}:</span> ${unset.slice(0,12).map(e => esc(e.name)).join(', ')}${unset.length>12?'…':''}`);
+  $('#shiftNotes').innerHTML = notes.map(n => `<div class="shift-note">${n}</div>`).join('');
+
+  if(!window.Chart) return;
+  chart('shiftChart', {type:'bar',
+    data:{labels: rows.map(c => c.role), datasets:[
+      {label:'קיבולת מלאה', data:rows.map(c => c.full), backgroundColor:'#93c5fd', borderRadius:4, order:2},
+      {label:'זמין השבוע',  data:rows.map(c => c.week), backgroundColor:TYPES.available.color, borderRadius:4, order:2},
+      {label:'נדרש', type:'line', data:rows.map(c => c.need), borderColor:'#dc2626', backgroundColor:'#dc2626', pointRadius:7, pointStyle:'rectRot', showLine:false, order:1}
+    ]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:legendOpts, tooltip:{rtl:true}},
+      scales:{y:{beginAtZero:true, ticks:{precision:0}, title:{display:true, text:'משמרות בשבוע'}}}}
+  });
+}
 
 /* ================= REFRESHERS (רענוני ירי) ================= */
 const EX_COLOR = '#f59e0b';
@@ -1026,6 +1107,11 @@ function renderSettings(){
       persist(() => cloud.saveMin());
     });
   });
+  $('#needForm').innerHTML = ROLES.map((r,i)=>`<label>${esc(r)} – משמרות בשבוע<input type="number" min="0" data-i="${i}" value="${+state.shiftNeeds[r]||0}"></label>`).join('');
+  $('#needForm').querySelectorAll('input').forEach(inp => inp.onchange = () => {
+    state.shiftNeeds = {...state.shiftNeeds, [ROLES[+inp.dataset.i]]: Math.max(0, +inp.value||0)};
+    persist(() => cloud.saveMin());
+  });
 }
 function download(name, text, mime){
   const a = document.createElement('a');
@@ -1035,9 +1121,9 @@ function download(name, text, mime){
 $('#exportBtn').onclick = () => download(`staff-backup-${TODAY}.json`, JSON.stringify(state,null,2), 'application/json');
 $('#csvBtn').onclick = () => {
   const days = weekDays();
-  const rows = [['שם','תפקיד','סטודנט','שומר שבת',...days.map((d,i)=>`${DAY_NAMES[i]} ${short(d)}`)]];
-  [...state.employees].sort(byRole).forEach(e => rows.push([e.name, e.role, e.student?'כן':'', e.shabbat?'כן':'', ...days.map(d=>TYPES[statusOn(e.id,d)].single)]));
-  rows.push(['סה"כ זמינים','','','', ...days.map(d=>countsOn(d).available)]);
+  const rows = [['שם','תפקיד','סטודנט','שומר שבת','משמרות/שבוע',...days.map((d,i)=>`${DAY_NAMES[i]} ${short(d)}`)]];
+  [...state.employees].sort(byRole).forEach(e => rows.push([e.name, e.role, e.student?'כן':'', e.shabbat?'כן':'', e.maxShifts||'', ...days.map(d=>TYPES[statusOn(e.id,d)].single)]));
+  rows.push(['סה"כ זמינים','','','','', ...days.map(d=>countsOn(d).available)]);
   const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
   download(`availability-${days[0]}.csv`, csv, 'text/csv;charset=utf-8');
 };
@@ -1068,7 +1154,8 @@ function loadDemo(){
     ['אורי סעדה','שומר',1],['ליאור טל','שומר',0],['בני אלמוג','שומר',0]
   ];
   const shomrim = new Set([1,5,9,13,16]);
-  const emps = people.map(([name,role,st],i) => ({id:uid(), name, role, student:!!st, shabbat:shomrim.has(i), phone:''}));
+  const shifts = [6,6,5, 6,4,6,5,6,5,6,6, 3,3,4,3,3,4,3];   // משמרות בשבוע לדוגמה
+  const emps = people.map(([name,role,st],i) => ({id:uid(), name, role, student:!!st, shabbat:shomrim.has(i), maxShifts:shifts[i], phone:''}));
   const t = new Date(), D = n => fmt(addDays(t,n));
   const abs = [
     [3,'vacation',-2,5,'חופשה משפחתית'],[5,'sick',0,2,''],[7,'reserve',-10,20,'צו 8'],
@@ -1087,7 +1174,7 @@ function loadDemo(){
     else if(i === 16) rec(i, periods[2], 'exempt', {reason:'אחר', note:'באישור קב"ט'});
     else if(i % 4 !== 1) rec(i, periods[2], 'done', {date:D(-25 + i)});
   });
-  state = {employees:emps, absences:abs, periods, refresh, minimums:{'אחמ"ש':2,'מאבטח':6,'שומר':5}, minimumsWeekend:{...state.minimumsWeekend}};
+  state = {employees:emps, absences:abs, periods, refresh, minimums:{'אחמ"ש':2,'מאבטח':6,'שומר':5}, minimumsWeekend:{...state.minimumsWeekend}, shiftNeeds:{...state.shiftNeeds}};
   showTab('dash'); persist(() => cloud.replaceAll(state));
 }
 $('#demoBtn').onclick = loadDemo; $('#demoBtn2').onclick = loadDemo;
