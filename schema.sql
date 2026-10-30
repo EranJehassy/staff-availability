@@ -17,6 +17,8 @@ create table if not exists public.employees (
 -- עדכון למסד קיים (מוסיף את העמודה אם היא חסרה)
 alter table public.employees add column if not exists shabbat boolean not null default false;
 alter table public.employees add column if not exists max_shifts integer not null default 0 check (max_shifts between 0 and 21);
+alter table public.employees add column if not exists gun_license_exp date;
+alter table public.employees add column if not exists guard_cert_exp  date;
 
 -- ---------- היעדרויות ----------
 create table if not exists public.absences (
@@ -40,7 +42,8 @@ create table if not exists public.settings (
 insert into public.settings (key, value)
 values ('minimums',         '{"אחמ\"ש": 1, "מאבטח": 3, "שומר": 2}'::jsonb),
        ('minimums_weekend', '{"אחמ\"ש": 3, "מאבטח": 6, "שומר": 3}'::jsonb),
-       ('shift_needs',      '{"אחמ\"ש": 21, "מאבטח": 47, "שומר": 21}'::jsonb)
+       ('shift_needs',      '{"אחמ\"ש": 21, "מאבטח": 47, "שומר": 21}'::jsonb),
+       ('cert_warn_days',   '30'::jsonb)
 on conflict (key) do nothing;
 
 -- ---------- אבטחה: רק משתמשים מחוברים יכולים לקרוא ולכתוב ----------

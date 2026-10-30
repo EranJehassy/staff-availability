@@ -99,6 +99,21 @@ dialog textarea{width:100%;height:340px;direction:rtl}
 #toast.bad{background:var(--danger)}
 .brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .sync{font-size:13px;opacity:.9;background:rgba(255,255,255,.12);padding:3px 10px;border-radius:999px}
+/* תעודות */
+.cert-badge{background:#dc2626;color:#fff;border:2px solid #fff;border-radius:999px;padding:3px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.7)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}
+@media (prefers-reduced-motion:reduce){.cert-badge{animation:none}}
+.cert-alert{background:#7f1d1d;color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:16px;border-right:8px solid #fca5a5}
+.cert-alert h3{margin:0 0 10px;font-size:17px}
+.cert-alert ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px}
+.cert-alert li{background:rgba(255,255,255,.1);border-radius:8px;padding:7px 10px;display:flex;justify-content:space-between;gap:8px;cursor:pointer}
+.cert-alert li:hover{background:rgba(255,255,255,.18)}
+.cert-alert li.expired{background:#dc2626}
+.cert-alert li small{opacity:.85;white-space:nowrap}
+.cb{display:inline-block;padding:2px 8px;border-radius:6px;font-size:13px;white-space:nowrap}
+.cb.expired{background:#dc2626;color:#fff;font-weight:700}
+.cb.soon{background:#fef3c7;color:#92400e;font-weight:700;border:1px solid #f59e0b}
+@media print{.cert-alert{background:#fff;color:#7f1d1d;border:2px solid #7f1d1d}.cert-alert li{background:none}}
 /* משמרות */
 table.shifts td,table.shifts th{text-align:center}
 table.shifts td:first-child,table.shifts th:first-child{text-align:right}
@@ -137,7 +152,8 @@ td.last small{display:block;color:var(--muted);font-weight:400}
 </head>
 <body>
 <header>
-  <div class="brand"><h1>🛡️ זמינות כוח אדם</h1><span id="sync" class="sync"></span></div>
+  <div class="brand"><h1>🛡️ זמינות כוח אדם</h1><span id="sync" class="sync"></span>
+    <button id="certBadge" class="cert-badge" hidden title="תעודות שפג תוקפן או עומדות לפוג"></button></div>
   <div class="weeknav">
     <button id="prevW" title="שבוע קודם">→</button>
     <span id="weekLabel"></span>
@@ -165,6 +181,7 @@ td.last small{display:block;color:var(--muted);font-weight:400}
     <button class="btn primary" id="demoBtn2">טען נתוני דוגמה</button>
   </div>
   <div id="dash">
+    <div id="certAlert"></div>
     <div class="toolbar">
       <select id="roleFilter"></select>
       <span style="flex:1"></span>
@@ -228,6 +245,8 @@ td.last small{display:block;color:var(--muted);font-weight:400}
       <label>טלפון (לא חובה)<input id="ePhone" inputmode="tel"></label>
       <label class="check"><input type="checkbox" id="eStudent"> סטודנט</label>
       <label>משמרות בשבוע (מקסימום)<input type="number" id="eShifts" min="0" max="21" step="1" placeholder="למשל 5"></label>
+      <label>תוקף רישיון נשק<input type="date" id="eGunExp"></label>
+      <label>תוקף תעודת מאבטח<input type="date" id="eGuardExp"></label>
       <label class="check"><input type="checkbox" id="eShabbat"> שומר שבת</label>
       <div style="display:flex;gap:8px">
         <button class="btn primary" type="submit" id="empSubmit">הוסף</button>
@@ -309,6 +328,11 @@ td.last small{display:block;color:var(--muted);font-weight:400}
     <h3>משמרות נדרשות בשבוע לפי תפקיד</h3>
     <p class="muted" style="margin-top:0">המערכת משווה את הנדרש לסך המשמרות שהעובדים בכל תפקיד נותנים בשבוע (לפי "משמרות בשבוע" בכרטיס העובד), ומורידה משמרות של מי שנעדר.</p>
     <div class="form" id="needForm"></div>
+  </div>
+  <div class="card">
+    <h3>אזהרת תוקף תעודות</h3>
+    <p class="muted" style="margin-top:0">רישיון נשק או תעודת מאבטח שפג תוקפם, או שיפוג בטווח הזה, יופיעו כאזהרה אדומה בראש הדשבורד ובכותרת.</p>
+    <div class="form"><label>להתריע כמה ימים לפני פקיעה<input type="number" id="certWarn" min="0" max="365"></label></div>
   </div>
   <div class="card">
     <h3>גיבוי ושחזור</h3>
@@ -401,7 +425,8 @@ let sb = null;
 /* ================= STATE ================= */
 let state = blank();
 function blank(){ return {employees:[],absences:[],periods:[],refresh:[],minimums:{'אחמ"ש':1,'מאבטח':3,'שומר':2},minimumsWeekend:{'אחמ"ש':3,'מאבטח':6,'שומר':3},
-  shiftNeeds:{'אחמ"ש':21,'מאבטח':47,'שומר':21}}; }   // משמרות נדרשות בשבוע לכל תפקיד
+  shiftNeeds:{'אחמ"ש':21,'מאבטח':47,'שומר':21},   // משמרות נדרשות בשבוע לכל תפקיד
+  certWarnDays:30}; }                              // כמה ימים לפני פקיעת תעודה מתחילה האזהרה
 const isWeekend = ds => parse(ds).getDay() >= 5;                       // שישי (5) ושבת (6)
 const minsFor   = ds => isWeekend(ds) ? state.minimumsWeekend : state.minimums;
 const minFor    = (ds, role) => +minsFor(ds)[role] || 0;
@@ -414,8 +439,10 @@ const $ = s => document.querySelector(s);
 
 /* ================= DATA LAYER ================= */
 const q = async p => { const {data, error} = await p; if(error) throw error; return data; };
-const E2R = e => ({id:e.id, name:e.name, role:e.role, phone:e.phone||'', student:!!e.student, shabbat:!!e.shabbat, max_shifts:+e.maxShifts||0});
-const R2E = r => ({id:r.id, name:r.name, role:r.role, phone:r.phone||'', student:!!r.student, shabbat:!!r.shabbat, maxShifts:+r.max_shifts||0});
+const E2R = e => ({id:e.id, name:e.name, role:e.role, phone:e.phone||'', student:!!e.student, shabbat:!!e.shabbat, max_shifts:+e.maxShifts||0,
+                   gun_license_exp:e.gunExp||null, guard_cert_exp:e.guardExp||null});
+const R2E = r => ({id:r.id, name:r.name, role:r.role, phone:r.phone||'', student:!!r.student, shabbat:!!r.shabbat, maxShifts:+r.max_shifts||0,
+                   gunExp:r.gun_license_exp||'', guardExp:r.guard_cert_exp||''});
 const A2R = a => ({id:a.id, emp_id:a.empId, type:a.type, date_from:a.from, date_to:a.to, note:a.note||''});
 const R2A = r => ({id:r.id, empId:r.emp_id, type:r.type, from:r.date_from, to:r.date_to, note:r.note||''});
 const P2R = p => ({id:p.id, name:p.name, sort:p.sort});
@@ -425,7 +452,7 @@ const R2C = r => ({id:r.id, empId:r.emp_id, periodId:r.period_id, status:r.statu
 const cloud = {
   async loadAll(){
     const [e, a, s, p, c] = await Promise.all([
-      q(sb.from('employees').select('id,name,role,phone,student,shabbat,max_shifts')),
+      q(sb.from('employees').select('id,name,role,phone,student,shabbat,max_shifts,gun_license_exp,guard_cert_exp')),
       q(sb.from('absences').select('id,emp_id,type,date_from,date_to,note')),
       q(sb.from('settings').select('key,value')),
       q(sb.from('refresh_periods').select('id,name,sort')),
@@ -436,6 +463,7 @@ const cloud = {
             minimums: set('minimums') || blank().minimums,
             minimumsWeekend: set('minimums_weekend') || blank().minimumsWeekend,
             shiftNeeds: set('shift_needs') || blank().shiftNeeds,
+            certWarnDays: set('cert_warn_days') ?? blank().certWarnDays,
             periods: p.map(P2R), refresh: c.map(R2C)};
   },
   savePeriod: p  => q(sb.from('refresh_periods').upsert(P2R(p))),
@@ -446,7 +474,7 @@ const cloud = {
   delEmp:  id => q(sb.from('employees').delete().eq('id', id)),        // ההיעדרויות נמחקות אוטומטית (cascade)
   saveAbs: a  => q(sb.from('absences').upsert(A2R(a))),
   delAbs:  id => q(sb.from('absences').delete().eq('id', id)),
-  saveMin: () => q(sb.from('settings').upsert([{key:'minimums', value:state.minimums}, {key:'minimums_weekend', value:state.minimumsWeekend}, {key:'shift_needs', value:state.shiftNeeds}])),
+  saveMin: () => q(sb.from('settings').upsert([{key:'minimums', value:state.minimums}, {key:'minimums_weekend', value:state.minimumsWeekend}, {key:'shift_needs', value:state.shiftNeeds}, {key:'cert_warn_days', value:state.certWarnDays}])),
   async clearAll(){
     await q(sb.from('refresh_records').delete().neq('id', ''));
     await q(sb.from('refresh_periods').delete().neq('id', ''));
@@ -786,6 +814,11 @@ function summaryText(){
     L.push('', `רענון ירי – ${cp.name}: ביצעו ${s.done.length}, פטורים ${s.exempt.length}, טרם ביצעו ${s.pending.length} (מתוך ${emps.length})`);
     if(s.pending.length) L.push(`טרם ביצעו: ${s.pending.sort(byRole).map(e => `${e.name} (${e.role})`).join(', ')}`);
   }
+  const ci = certIssues();
+  if(ci.length){
+    L.push('', `🚨 תוקף תעודות – ${certHeadline(ci)}:`);
+    ci.forEach(i => L.push(`• ${i.e.name} (${i.e.role}) – ${i.c.label}: ${certWhen(i.n)} (${full(i.date)})${i.lv==='expired' ? ' ⛔' : ''}`));
+  }
   L.push('', `כיסוי משמרות בשבוע ${short(days[0])}–${short(days[6])}:`);
   ROLES.forEach(r => {
     const c = shiftCoverage(r, days);
@@ -816,7 +849,8 @@ $('#empCancel').onclick = resetEmpForm;
 $('#empForm').onsubmit = e => {
   e.preventDefault();
   const data = {name:$('#eName').value.trim(), role:$('#eRole').value, phone:$('#ePhone').value.trim(), student:$('#eStudent').checked, shabbat:$('#eShabbat').checked,
-                maxShifts:Math.max(0, Math.min(21, parseInt($('#eShifts').value, 10) || 0))};
+                maxShifts:Math.max(0, Math.min(21, parseInt($('#eShifts').value, 10) || 0)),
+                gunExp:$('#eGunExp').value, guardExp:$('#eGuardExp').value};
   if(!data.name) return;
   let emp;
   if(editingEmp){ emp = empById(editingEmp); Object.assign(emp, data); }
@@ -825,7 +859,7 @@ $('#empForm').onsubmit = e => {
 };
 function editEmp(id){
   const e = empById(id); editingEmp = id;
-  $('#eName').value = e.name; $('#eRole').value = e.role; $('#ePhone').value = e.phone||''; $('#eStudent').checked = !!e.student; $('#eShabbat').checked = !!e.shabbat; $('#eShifts').value = e.maxShifts || '';
+  $('#eName').value = e.name; $('#eRole').value = e.role; $('#ePhone').value = e.phone||''; $('#eStudent').checked = !!e.student; $('#eShabbat').checked = !!e.shabbat; $('#eShifts').value = e.maxShifts || ''; $('#eGunExp').value = e.gunExp || ''; $('#eGuardExp').value = e.guardExp || '';
   $('#empFormTitle').textContent = 'עריכת עובד'; $('#empSubmit').textContent = 'שמור'; $('#empCancel').hidden = false;
   window.scrollTo({top:0, behavior:'smooth'});
 }
@@ -841,9 +875,9 @@ function renderEmps(){
   const q = $('#empSearch').value.trim();
   const list = state.employees.filter(e => !q || e.name.includes(q) || e.role.includes(q)).sort(byRole);
   $('#empCount').textContent = state.employees.length;
-  $('#empTable').innerHTML = list.length ? `<table><thead><tr><th>שם</th><th>תפקיד</th><th>סטודנט</th><th>שומר שבת</th><th>משמרות/שבוע</th><th>טלפון</th><th>מצב היום</th><th></th></tr></thead><tbody>` +
+  $('#empTable').innerHTML = list.length ? `<table><thead><tr><th>שם</th><th>תפקיד</th><th>סטודנט</th><th>שומר שבת</th><th>משמרות/שבוע</th><th>רישיון נשק</th><th>תעודת מאבטח</th><th>טלפון</th><th>מצב היום</th><th></th></tr></thead><tbody>` +
     list.map(e => { const s = statusOn(e.id, TODAY), a = absenceOn(e.id, TODAY);
-      return `<tr><td>${esc(e.name)}</td><td>${esc(e.role)}</td><td>${e.student?'✓':''}</td><td>${e.shabbat?'✓':''}</td><td>${e.maxShifts ? e.maxShifts : '<span class="muted" title="לא הוגדר">—</span>'}</td><td dir="ltr" style="text-align:right">${esc(e.phone||'')}</td>
+      return `<tr><td>${esc(e.name)}</td><td>${esc(e.role)}</td><td>${e.student?'✓':''}</td><td>${e.shabbat?'✓':''}</td><td>${e.maxShifts ? e.maxShifts : '<span class="muted" title="לא הוגדר">—</span>'}</td>${CERTS.map(c => `<td>${certBadge(e[c.key])}</td>`).join('')}<td dir="ltr" style="text-align:right">${esc(e.phone||'')}</td>
       <td><span class="badge" style="background:${TYPES[s].color}">${TYPES[s].single}${a?' עד '+short(a.to):''}</span></td>
       <td><button class="btn sm" onclick="addAbsFor('${e.id}')">+ היעדרות</button> <button class="btn sm" onclick="editEmp('${e.id}')">עריכה</button> <button class="btn sm danger" onclick="delEmp('${e.id}')">מחיקה</button></td></tr>`;
     }).join('') + '</tbody></table>' : '<p class="muted">אין עובדים.</p>';
@@ -898,6 +932,49 @@ function renderAbs(){
     }).join('') + '</tbody></table>' : '<p class="muted">אין היעדרויות להצגה.</p>';
 }
 $('#absFilter').onchange = renderAbs; $('#absSearch').oninput = renderAbs;
+
+/* ================= CERTIFICATES (תוקף תעודות) ================= */
+const CERTS = [{key:'gunExp', label:'רישיון נשק'}, {key:'guardExp', label:'תעודת מאבטח'}];
+const daysUntil = ds => Math.round((parse(ds) - parse(TODAY)) / 86400000);
+function certLevel(ds){
+  if(!ds) return '';
+  const n = daysUntil(ds);
+  return n < 0 ? 'expired' : n <= (+state.certWarnDays || 0) ? 'soon' : 'ok';
+}
+const certWhen = n => n < 0 ? `פג לפני ${-n === 1 ? 'יום' : -n + ' ימים'}` : n === 0 ? 'פג היום' : n === 1 ? 'פג מחר' : `פג בעוד ${n} ימים`;
+function certBadge(ds){
+  const lv = certLevel(ds);
+  if(!lv) return '<span class="muted">—</span>';
+  if(lv === 'ok') return full(ds);
+  return `<span class="cb ${lv}" title="${certWhen(daysUntil(ds))}">${lv === 'expired' ? '⛔' : '⚠️'} ${full(ds)}</span>`;
+}
+// כל התעודות שפג תוקפן או עומדות לפוג – תמיד לפי התאריך של היום, לכל העובדים
+function certIssues(){
+  const out = [];
+  state.employees.forEach(e => CERTS.forEach(c => {
+    const lv = certLevel(e[c.key]);
+    if(lv === 'expired' || lv === 'soon') out.push({e, c, date:e[c.key], n:daysUntil(e[c.key]), lv});
+  }));
+  return out.sort((a,b) => a.n - b.n);
+}
+function certHeadline(list){
+  const exp = list.filter(i => i.lv === 'expired').length, soon = list.length - exp, parts = [];
+  if(exp)  parts.push(exp  === 1 ? 'תעודה אחת פג תוקפה'   : `${exp} תעודות פג תוקפן`);
+  if(soon) parts.push(soon === 1 ? 'תעודה אחת עומדת לפוג' : `${soon} תעודות עומדות לפוג`);
+  return parts.join(' · ');
+}
+function renderCerts(){
+  const list = certIssues();
+  const b = $('#certBadge');
+  b.hidden = !list.length;
+  b.textContent = `🚨 ${list.length} ${list.length === 1 ? 'תעודה' : 'תעודות'}`;
+  $('#certAlert').innerHTML = !list.length ? '' :
+    `<div class="cert-alert" role="alert"><h3>🚨 אזהרת תוקף תעודות – ${certHeadline(list)}</h3><ul>` +
+    list.map(i => `<li class="${i.lv}" data-emp="${i.e.id}" title="לחץ לעדכון התאריך"><span><b>${esc(i.e.name)}</b> · ${i.c.label}</span><small>${certWhen(i.n)} (${full(i.date)})</small></li>`).join('') +
+    '</ul></div>';
+  document.querySelectorAll('#certAlert li[data-emp]').forEach(li => li.onclick = () => { showTab('emps'); editEmp(li.dataset.emp); });
+}
+$('#certBadge').onclick = () => { showTab('dash'); $('#certAlert').scrollIntoView({behavior:'smooth', block:'start'}); };
 
 /* ================= SHIFTS (כיסוי משמרות) ================= */
 // קיבולת = סך המשמרות שעובדי התפקיד נותנים בשבוע.
@@ -1112,7 +1189,12 @@ function renderSettings(){
     state.shiftNeeds = {...state.shiftNeeds, [ROLES[+inp.dataset.i]]: Math.max(0, +inp.value||0)};
     persist(() => cloud.saveMin());
   });
+  $('#certWarn').value = state.certWarnDays;
 }
+$('#certWarn').onchange = () => {
+  state.certWarnDays = Math.max(0, Math.min(365, parseInt($('#certWarn').value, 10) || 0));
+  persist(() => cloud.saveMin());
+};
 function download(name, text, mime){
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text], {type:mime}));
@@ -1121,9 +1203,10 @@ function download(name, text, mime){
 $('#exportBtn').onclick = () => download(`staff-backup-${TODAY}.json`, JSON.stringify(state,null,2), 'application/json');
 $('#csvBtn').onclick = () => {
   const days = weekDays();
-  const rows = [['שם','תפקיד','סטודנט','שומר שבת','משמרות/שבוע',...days.map((d,i)=>`${DAY_NAMES[i]} ${short(d)}`)]];
-  [...state.employees].sort(byRole).forEach(e => rows.push([e.name, e.role, e.student?'כן':'', e.shabbat?'כן':'', e.maxShifts||'', ...days.map(d=>TYPES[statusOn(e.id,d)].single)]));
-  rows.push(['סה"כ זמינים','','','','', ...days.map(d=>countsOn(d).available)]);
+  const rows = [['שם','תפקיד','סטודנט','שומר שבת','משמרות/שבוע','תוקף רישיון נשק','תוקף תעודת מאבטח',...days.map((d,i)=>`${DAY_NAMES[i]} ${short(d)}`)]];
+  const certCsv = ds => !ds ? '' : full(ds) + ({expired:' (פג תוקף)', soon:' (עומד לפוג)'}[certLevel(ds)] || '');
+  [...state.employees].sort(byRole).forEach(e => rows.push([e.name, e.role, e.student?'כן':'', e.shabbat?'כן':'', e.maxShifts||'', certCsv(e.gunExp), certCsv(e.guardExp), ...days.map(d=>TYPES[statusOn(e.id,d)].single)]));
+  rows.push(['סה"כ זמינים','','','','','','', ...days.map(d=>countsOn(d).available)]);
   const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
   download(`availability-${days[0]}.csv`, csv, 'text/csv;charset=utf-8');
 };
@@ -1155,7 +1238,13 @@ function loadDemo(){
   ];
   const shomrim = new Set([1,5,9,13,16]);
   const shifts = [6,6,5, 6,4,6,5,6,5,6,6, 3,3,4,3,3,4,3];   // משמרות בשבוע לדוגמה
-  const emps = people.map(([name,role,st],i) => ({id:uid(), name, role, student:!!st, shabbat:shomrim.has(i), maxShifts:shifts[i], phone:''}));
+  const emps = people.map(([name,role,st],i) => ({id:uid(), name, role, student:!!st, shabbat:shomrim.has(i), maxShifts:shifts[i], phone:'',
+    gunExp: fmt(addDays(new Date(), 60 + i*37)),                              // תוקף רישיון נשק לדוגמה
+    guardExp: role === 'שומר' ? '' : fmt(addDays(new Date(), 90 + i*29))}));  // לשומרים אין תעודת מאבטח בדוגמה
+  // כמה תעודות בעייתיות כדי לראות את האזהרה
+  emps[4].gunExp = fmt(addDays(new Date(), -12));    // פג
+  emps[9].guardExp = fmt(addDays(new Date(), 9));    // עומד לפוג
+  emps[13].gunExp = fmt(addDays(new Date(), 21));    // עומד לפוג
   const t = new Date(), D = n => fmt(addDays(t,n));
   const abs = [
     [3,'vacation',-2,5,'חופשה משפחתית'],[5,'sick',0,2,''],[7,'reserve',-10,20,'צו 8'],
@@ -1174,14 +1263,14 @@ function loadDemo(){
     else if(i === 16) rec(i, periods[2], 'exempt', {reason:'אחר', note:'באישור קב"ט'});
     else if(i % 4 !== 1) rec(i, periods[2], 'done', {date:D(-25 + i)});
   });
-  state = {employees:emps, absences:abs, periods, refresh, minimums:{'אחמ"ש':2,'מאבטח':6,'שומר':5}, minimumsWeekend:{...state.minimumsWeekend}, shiftNeeds:{...state.shiftNeeds}};
+  state = {employees:emps, absences:abs, periods, refresh, minimums:{'אחמ"ש':2,'מאבטח':6,'שומר':5}, minimumsWeekend:{...state.minimumsWeekend}, shiftNeeds:{...state.shiftNeeds}, certWarnDays:state.certWarnDays};
   showTab('dash'); persist(() => cloud.replaceAll(state));
 }
 $('#demoBtn').onclick = loadDemo; $('#demoBtn2').onclick = loadDemo;
 
 /* ================= RENDER ================= */
 function renderAll(){
-  renderHeader(); fillEmpSelect(); renderEmps(); renderAbs(); renderRef(); renderSettings();
+  renderHeader(); fillEmpSelect(); renderEmps(); renderAbs(); renderRef(); renderSettings(); renderCerts();
   if(!$('#tab-dash').hidden) renderDashboard();
 }
 $('#refDashLink').onclick = e => { e.preventDefault(); showTab('ref'); };

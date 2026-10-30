@@ -1,0 +1,709 @@
+{
+  "employees": [
+    {
+      "id": "2c7f1c0d-eefc-4188-854f-5be11141c9d5",
+      "name": "ערן ג'הסי",
+      "role": "אחמ\"ש",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "13af56b3-125e-4d38-a516-e277d03be1e4",
+      "name": "פיראס דקסה",
+      "role": "אחמ\"ש",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "011c0bd1-c900-4d67-a29f-df9fb7c01bc8",
+      "name": "טארק חלבי",
+      "role": "אחמ\"ש",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "067f9972-4f73-4112-aae0-75c7357fe8a4",
+      "name": "אביב גוזלן",
+      "role": "אחמ\"ש",
+      "phone": "",
+      "student": true,
+      "shabbat": false
+    },
+    {
+      "id": "c6a8452d-a6c2-44c7-963d-a79e8800f7a2",
+      "name": "שרון אלפסי",
+      "role": "אחמ\"ש",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "378fa178-37f1-4376-957f-c6908f4b8f53",
+      "name": "איתי יונגר",
+      "role": "אחמ\"ש",
+      "phone": "",
+      "student": true,
+      "shabbat": false
+    },
+    {
+      "id": "2b5099e3-9393-4c3d-8ea4-d0b06c3a362e",
+      "name": "אוהב אריה",
+      "role": "מאבטח",
+      "phone": "",
+      "student": true,
+      "shabbat": false
+    },
+    {
+      "id": "bb3c36df-b3a0-4efa-a552-888da3de9a3b",
+      "name": "אדר אפשטיין",
+      "role": "מאבטח",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "cd88f399-6e40-441e-83b9-4ead4b5c1e19",
+      "name": "עידו אלימלך",
+      "role": "מאבטח",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "812b1486-8833-47f6-8387-c972061721e6",
+      "name": "שון אינגורין",
+      "role": "מאבטח",
+      "phone": "",
+      "student": true,
+      "shabbat": false
+    },
+    {
+      "id": "bd011b0d-fd21-426e-a384-0b7c8e351b35",
+      "name": "דניאל בלטה",
+      "role": "מאבטח",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "e4f4e0dd-8442-4c78-817d-eb0f0c92f94b",
+      "name": "ימית בן אודיז",
+      "role": "מאבטח",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "c41ddf73-b1bf-4bca-a41f-09a91437301e",
+      "name": "רותם בן יוסף",
+      "role": "שומר",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "b2ad5836-ecef-46e8-97b2-6c1643d6f4e0",
+      "name": "ריקרדו גומז",
+      "role": "שומר",
+      "phone": "",
+      "student": true,
+      "shabbat": false
+    },
+    {
+      "id": "93994ff4-fd57-42c0-bdfc-92f7437ba2a5",
+      "name": "אמיר דקסי",
+      "role": "מאבטח",
+      "phone": "",
+      "student": true,
+      "shabbat": false
+    },
+    {
+      "id": "aad45c45-302d-488f-8dd4-dabd7ef51a36",
+      "name": "דניאלה זסדה",
+      "role": "מאבטח",
+      "phone": "",
+      "student": true,
+      "shabbat": false
+    },
+    {
+      "id": "24464132-17b0-4b1a-bc42-b2b83ff53836",
+      "name": "אסף חלף",
+      "role": "מאבטח",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "59eba049-f445-4cfa-a028-9597afcec848",
+      "name": "יהב טל",
+      "role": "מאבטח",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "a90772f2-2e7f-47a7-a470-6eec97df288c",
+      "name": "יטאיו טאקלה",
+      "role": "מאבטח",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "d66f93cf-6850-45bf-b213-aad302b843e7",
+      "name": "ירין שי",
+      "role": "מאבטח",
+      "phone": "",
+      "student": true,
+      "shabbat": false
+    },
+    {
+      "id": "fff7846e-270a-45c5-9dd7-4f9c6d4d5fbd",
+      "name": "הבטמו סיסאיי",
+      "role": "שומר",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "2405d082-6ef9-46c9-9518-4e9e7a7460db",
+      "name": "רייאן חדיד",
+      "role": "מאבטח",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "1f551ff0-7a7f-4dfa-b35c-5230238358e6",
+      "name": "רועי חמו",
+      "role": "שומר",
+      "phone": "",
+      "student": false,
+      "shabbat": false
+    },
+    {
+      "id": "ec171a28-e9d7-49b2-97f6-09ef7c78eaae",
+      "name": "יעקב איבגי",
+      "role": "אחמ\"ש",
+      "phone": "",
+      "student": false,
+      "shabbat": true
+    },
+    {
+      "id": "6d528031-178f-4bf6-9fad-f7252bc1fe19",
+      "name": "מיכאל ברזני",
+      "role": "מאבטח",
+      "phone": "",
+      "student": true,
+      "shabbat": true
+    },
+    {
+      "id": "bba574b7-748c-4582-8c49-d470bd32e3d2",
+      "name": "שלומי אמארה",
+      "role": "מאבטח",
+      "phone": "",
+      "student": true,
+      "shabbat": true
+    }
+  ],
+  "absences": [
+    {
+      "id": "1d41d07f-f226-4069-9531-37ec97f2e67f",
+      "empId": "067f9972-4f73-4112-aae0-75c7357fe8a4",
+      "type": "reserve",
+      "from": "2026-09-27",
+      "to": "2026-12-01",
+      "note": "תאריך סופי לא ידוע"
+    },
+    {
+      "id": "4c002290-085c-4dc0-8fff-2fb8166e3532",
+      "empId": "378fa178-37f1-4376-957f-c6908f4b8f53",
+      "type": "vacation",
+      "from": "2026-09-29",
+      "to": "2026-10-18",
+      "note": ""
+    },
+    {
+      "id": "336c5c27-7a41-47bd-9b35-c4153be7e842",
+      "empId": "2b5099e3-9393-4c3d-8ea4-d0b06c3a362e",
+      "type": "vacation",
+      "from": "2026-09-29",
+      "to": "2026-10-12",
+      "note": ""
+    },
+    {
+      "id": "6125b049-a87a-44e2-bc49-1bb6f32c0f7f",
+      "empId": "d66f93cf-6850-45bf-b213-aad302b843e7",
+      "type": "vacation",
+      "from": "2026-10-04",
+      "to": "2026-10-08",
+      "note": ""
+    },
+    {
+      "id": "f4c55aec-7ef3-4f04-b7c5-0f1e5351ec2a",
+      "empId": "c6a8452d-a6c2-44c7-963d-a79e8800f7a2",
+      "type": "vacation",
+      "from": "2026-08-27",
+      "to": "2026-10-12",
+      "note": "חוזר ללא רישיון נשק בתוקף"
+    },
+    {
+      "id": "5b4f4edd-c1ee-46fc-ad40-d6abd8220116",
+      "empId": "59eba049-f445-4cfa-a028-9597afcec848",
+      "type": "reserve",
+      "from": "2026-08-02",
+      "to": "2026-11-05",
+      "note": ""
+    },
+    {
+      "id": "f4e497e0-7cd3-4e96-a3b5-3fdb47cfb63c",
+      "empId": "bb3c36df-b3a0-4efa-a552-888da3de9a3b",
+      "type": "vacation",
+      "from": "2026-12-09",
+      "to": "2027-01-15",
+      "note": ""
+    },
+    {
+      "id": "9f770c13-de85-4099-a1e2-a3e1b6dccf7c",
+      "empId": "c41ddf73-b1bf-4bca-a41f-09a91437301e",
+      "type": "vacation",
+      "from": "2026-10-21",
+      "to": "2026-11-23",
+      "note": ""
+    },
+    {
+      "id": "191a7d3f-193c-4752-a440-5f0609be5cef",
+      "empId": "c41ddf73-b1bf-4bca-a41f-09a91437301e",
+      "type": "reserve",
+      "from": "2026-12-01",
+      "to": "2027-02-01",
+      "note": "תאריך סיום לא סופי"
+    },
+    {
+      "id": "7381a4c2-7943-44cb-85bc-b26562d1b444",
+      "empId": "e4f4e0dd-8442-4c78-817d-eb0f0c92f94b",
+      "type": "vacation",
+      "from": "2026-08-25",
+      "to": "2026-12-20",
+      "note": "תאריך חזרה לא סופי"
+    },
+    {
+      "id": "95635b5b-53e5-471e-adfa-6a293a3af5e3",
+      "empId": "2405d082-6ef9-46c9-9518-4e9e7a7460db",
+      "type": "vacation",
+      "from": "2026-10-18",
+      "to": "2026-10-24",
+      "note": "חתונה משפחה"
+    },
+    {
+      "id": "43574b20-97c5-448e-a2cb-7c79b716587a",
+      "empId": "011c0bd1-c900-4d67-a29f-df9fb7c01bc8",
+      "type": "vacation",
+      "from": "2026-11-18",
+      "to": "2026-11-23",
+      "note": ""
+    },
+    {
+      "id": "f4c7d74f-2237-42c3-a9a3-9ccd13b2b5e3",
+      "empId": "fff7846e-270a-45c5-9dd7-4f9c6d4d5fbd",
+      "type": "reserve",
+      "from": "2026-09-08",
+      "to": "2026-10-30",
+      "note": ""
+    },
+    {
+      "id": "7c5b9440-1f22-4537-a08c-318291d8a9b8",
+      "empId": "2b5099e3-9393-4c3d-8ea4-d0b06c3a362e",
+      "type": "vacation",
+      "from": "2026-10-16",
+      "to": "2026-10-19",
+      "note": ""
+    },
+    {
+      "id": "2f412714-5b7b-4f10-a2fa-c446477992ae",
+      "empId": "c6a8452d-a6c2-44c7-963d-a79e8800f7a2",
+      "type": "reserve",
+      "from": "2026-10-25",
+      "to": "2027-01-17",
+      "note": ""
+    },
+    {
+      "id": "54323a8d-bfc2-450d-8cb2-65074c289cd1",
+      "empId": "bd011b0d-fd21-426e-a384-0b7c8e351b35",
+      "type": "reserve",
+      "from": "2026-09-23",
+      "to": "2026-10-26",
+      "note": ""
+    },
+    {
+      "id": "5abc141b-5db1-42bd-833e-4fc2f4e07a9c",
+      "empId": "bb3c36df-b3a0-4efa-a552-888da3de9a3b",
+      "type": "vacation",
+      "from": "2026-10-28",
+      "to": "2026-11-14",
+      "note": ""
+    },
+    {
+      "id": "4e9cd6d8-a8c1-44ec-9be3-f57438e4b9a9",
+      "empId": "fff7846e-270a-45c5-9dd7-4f9c6d4d5fbd",
+      "type": "vacation",
+      "from": "2026-10-23",
+      "to": "2026-11-01",
+      "note": ""
+    },
+    {
+      "id": "8039c3b0-bce6-4086-96fc-1c770359141f",
+      "empId": "a90772f2-2e7f-47a7-a470-6eec97df288c",
+      "type": "sick",
+      "from": "2026-10-25",
+      "to": "2026-10-31",
+      "note": ""
+    },
+    {
+      "id": "e74e76f1-4fc6-4c69-9944-f60bc805d978",
+      "empId": "812b1486-8833-47f6-8387-c972061721e6",
+      "type": "sick",
+      "from": "2026-10-22",
+      "to": "2026-10-24",
+      "note": ""
+    },
+    {
+      "id": "b951c8ba-06c7-4e33-8893-f49001944f0e",
+      "empId": "aad45c45-302d-488f-8dd4-dabd7ef51a36",
+      "type": "vacation",
+      "from": "2026-11-12",
+      "to": "2026-11-14",
+      "note": ""
+    },
+    {
+      "id": "73442121-4e05-42fe-b708-4ff062d2827c",
+      "empId": "ec171a28-e9d7-49b2-97f6-09ef7c78eaae",
+      "type": "reserve",
+      "from": "2026-08-23",
+      "to": "2026-11-11",
+      "note": ""
+    },
+    {
+      "id": "7f985783-6e4c-463e-a48c-20df0bd80feb",
+      "empId": "6d528031-178f-4bf6-9fad-f7252bc1fe19",
+      "type": "reserve",
+      "from": "2026-08-23",
+      "to": "2026-11-11",
+      "note": ""
+    },
+    {
+      "id": "070da084-8dc6-4897-8682-6a8dc378e697",
+      "empId": "2405d082-6ef9-46c9-9518-4e9e7a7460db",
+      "type": "reserve",
+      "from": "2026-11-29",
+      "to": "2027-01-10",
+      "note": ""
+    }
+  ],
+  "minimums": {
+    "שומר": 3,
+    "אחמ\"ש": 3,
+    "מאבטח": 7
+  },
+  "minimumsWeekend": {
+    "אחמ\"ש": 3,
+    "מאבטח": 6,
+    "שומר": 3
+  },
+  "periods": [
+    {
+      "id": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "name": "יולי-אוגוסט-ספטמבר 2026",
+      "sort": 1
+    },
+    {
+      "id": "123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "name": "אוקטובר-נובמבר-דצמבר 2026",
+      "sort": 2
+    }
+  ],
+  "refresh": [
+    {
+      "id": "067f9972-4f73-4112-aae0-75c7357fe8a4_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "067f9972-4f73-4112-aae0-75c7357fe8a4",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-09-24",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "378fa178-37f1-4376-957f-c6908f4b8f53_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "378fa178-37f1-4376-957f-c6908f4b8f53",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-07-13",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "011c0bd1-c900-4d67-a29f-df9fb7c01bc8_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "011c0bd1-c900-4d67-a29f-df9fb7c01bc8",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-07-13",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "ec171a28-e9d7-49b2-97f6-09ef7c78eaae_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "ec171a28-e9d7-49b2-97f6-09ef7c78eaae",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-08-03",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "2c7f1c0d-eefc-4188-854f-5be11141c9d5_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "2c7f1c0d-eefc-4188-854f-5be11141c9d5",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-08-04",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "13af56b3-125e-4d38-a516-e277d03be1e4_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "13af56b3-125e-4d38-a516-e277d03be1e4",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-07-09",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "c6a8452d-a6c2-44c7-963d-a79e8800f7a2_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "c6a8452d-a6c2-44c7-963d-a79e8800f7a2",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-07-20",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "bb3c36df-b3a0-4efa-a552-888da3de9a3b_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "bb3c36df-b3a0-4efa-a552-888da3de9a3b",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "exempt",
+      "date": "",
+      "reason": "קורס",
+      "note": ""
+    },
+    {
+      "id": "2b5099e3-9393-4c3d-8ea4-d0b06c3a362e_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "2b5099e3-9393-4c3d-8ea4-d0b06c3a362e",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-07-23",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "93994ff4-fd57-42c0-bdfc-92f7437ba2a5_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "93994ff4-fd57-42c0-bdfc-92f7437ba2a5",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-07-20",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "24464132-17b0-4b1a-bc42-b2b83ff53836_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "24464132-17b0-4b1a-bc42-b2b83ff53836",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-07-23",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "bd011b0d-fd21-426e-a384-0b7c8e351b35_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "bd011b0d-fd21-426e-a384-0b7c8e351b35",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-08-03",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "aad45c45-302d-488f-8dd4-dabd7ef51a36_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "aad45c45-302d-488f-8dd4-dabd7ef51a36",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-08-13",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "59eba049-f445-4cfa-a028-9597afcec848_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "59eba049-f445-4cfa-a028-9597afcec848",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "exempt",
+      "date": "",
+      "reason": "מילואים",
+      "note": ""
+    },
+    {
+      "id": "a90772f2-2e7f-47a7-a470-6eec97df288c_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "a90772f2-2e7f-47a7-a470-6eec97df288c",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-07-27",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "e4f4e0dd-8442-4c78-817d-eb0f0c92f94b_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "e4f4e0dd-8442-4c78-817d-eb0f0c92f94b",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-08-13",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "d66f93cf-6850-45bf-b213-aad302b843e7_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "d66f93cf-6850-45bf-b213-aad302b843e7",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-07-13",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "6d528031-178f-4bf6-9fad-f7252bc1fe19_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "6d528031-178f-4bf6-9fad-f7252bc1fe19",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-06-08",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "cd88f399-6e40-441e-83b9-4ead4b5c1e19_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "cd88f399-6e40-441e-83b9-4ead4b5c1e19",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-07-27",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "2405d082-6ef9-46c9-9518-4e9e7a7460db_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "2405d082-6ef9-46c9-9518-4e9e7a7460db",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "exempt",
+      "date": "",
+      "reason": "קורס",
+      "note": ""
+    },
+    {
+      "id": "812b1486-8833-47f6-8387-c972061721e6_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "812b1486-8833-47f6-8387-c972061721e6",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-08-13",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "bba574b7-748c-4582-8c49-d470bd32e3d2_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "bba574b7-748c-4582-8c49-d470bd32e3d2",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-09-28",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "fff7846e-270a-45c5-9dd7-4f9c6d4d5fbd_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "fff7846e-270a-45c5-9dd7-4f9c6d4d5fbd",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "exempt",
+      "date": "",
+      "reason": "קורס",
+      "note": ""
+    },
+    {
+      "id": "c41ddf73-b1bf-4bca-a41f-09a91437301e_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "c41ddf73-b1bf-4bca-a41f-09a91437301e",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-07-21",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "b2ad5836-ecef-46e8-97b2-6c1643d6f4e0_cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "empId": "b2ad5836-ecef-46e8-97b2-6c1643d6f4e0",
+      "periodId": "cf30fa6d-dfe6-4919-8fac-77bd7079b1aa",
+      "status": "done",
+      "date": "2026-07-20",
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "2c7f1c0d-eefc-4188-854f-5be11141c9d5_123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "empId": "2c7f1c0d-eefc-4188-854f-5be11141c9d5",
+      "periodId": "123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "status": "exempt",
+      "date": "",
+      "reason": "אחר",
+      "note": "אחת לחצי שנה"
+    },
+    {
+      "id": "c41ddf73-b1bf-4bca-a41f-09a91437301e_123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "empId": "c41ddf73-b1bf-4bca-a41f-09a91437301e",
+      "periodId": "123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "status": "exempt",
+      "date": "",
+      "reason": "אחר",
+      "note": "אחת לחצי שנה"
+    },
+    {
+      "id": "b2ad5836-ecef-46e8-97b2-6c1643d6f4e0_123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "empId": "b2ad5836-ecef-46e8-97b2-6c1643d6f4e0",
+      "periodId": "123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "status": "exempt",
+      "date": "",
+      "reason": "אחר",
+      "note": "אחת לחצי שנה"
+    },
+    {
+      "id": "1f551ff0-7a7f-4dfa-b35c-5230238358e6_123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "empId": "1f551ff0-7a7f-4dfa-b35c-5230238358e6",
+      "periodId": "123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "status": "exempt",
+      "date": "",
+      "reason": "אחר",
+      "note": "אחת לחצי שנה"
+    },
+    {
+      "id": "fff7846e-270a-45c5-9dd7-4f9c6d4d5fbd_123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "empId": "fff7846e-270a-45c5-9dd7-4f9c6d4d5fbd",
+      "periodId": "123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "status": "exempt",
+      "date": "",
+      "reason": "אחר",
+      "note": "אחת לחצי שנה"
+    },
+    {
+      "id": "59eba049-f445-4cfa-a028-9597afcec848_123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "empId": "59eba049-f445-4cfa-a028-9597afcec848",
+      "periodId": "123ab658-2c9a-476f-bfbb-3ab9bec68994",
+      "status": "done",
+      "date": "2026-10-29",
+      "reason": "",
+      "note": ""
+    }
+  ]
+}
